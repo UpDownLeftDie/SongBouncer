@@ -1,0 +1,25 @@
+{
+  "name": "songbouncer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UpDownLeftDie/SongBouncer.git"
+  },
+  "author": "Jared Kotoff (UpDownLeftDie)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/UpDownLeftDie/SongBouncer/issues"
+  },
+  "homepage": "https://github.com/UpDownLeftDie/SongBouncer#readme",
+  "dependencies": {
+    "dotenv": "^6.0.0",
+    "request": "^2.87.0",
+    "request-promise": "^4.2.2",
+    "tmi.js": "^1.2.1"
+  }
+}

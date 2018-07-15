@@ -1,0 +1,103 @@
+const tmi = require('tmi.js');
+const request = require('request-promise');
+const config = require('./config.json');
+
+const options = {
+    options: {
+        debug: false
+    },
+    connection: {
+        reconnect: true
+    },
+    identity: {
+        username: config.userName,
+        password: `oauth:${config.oauth}`
+
+    },
+    channels: config.channels
+};
+
+main();
+async function main() {
+	const channels = new Map(await getChannelIds(config.channels));
+	if (channels.length < 1) {
+		console.error('No channels were found. Quitting');
+		return;
+	}
+
+	var client = new tmi.client(options);
+	client.connect();
+
+	client.on("chat", async function (channel, user, message, self) {
+		if (message.indexOf('!songsuggestion') !== 0 && message.indexOf('!suggestsong') !== 0) {
+			return;
+		}
+		if (user.mod || user.subscriber || await isFollower(user, channel)) {
+			requestsong(user, message);
+		} else {
+			client.say(channel, `@${user['display-name']}, please Follow to suggest a song`);
+		}
+	});
+}
+
+
+async function requestsong(user, message) {
+	const song = message.split(' ').splice(1).join(' ');
+	if(song) {
+		console.log(`"${song}" by ${user.username}`);
+	}
+}
+
+function isFollower(user, channel) {
+	const uri = `https://api.twitch.tv/kraken/users/${user['user-id']}/follows/channels/${channels.get(channel)}`;
+	const options = {
+		uri,
+		headers: {
+			Accept: 'application/vnd.twitchtv.v5+json',
+			'Client-ID': config.clientId,
+			'Authorization': `OAuth ${config.oauth}`
+		},
+		method: 'GET',
+		json: true
+	};
+
+	return request(options)
+	.then(body => {
+		if (body.channel) {
+			return true;
+		} else {
+			return false;
+		}
+	}).catch(error => {
+		return false;
+	})
+}
+
+function getChannelIds(channels) {
+	let loginStr = '';
+	channels.forEach(channel => {
+		loginStr += `,${channel.replace('#', '')}`;
+	})
+	// TODO use helix endpoint (login&=login&=)
+	const uri = `https://api.twitch.tv/kraken/users?login=${loginStr.slice(1)}`;
+	const options = {
+		uri,
+		headers: {
+			Accept: 'application/vnd.twitchtv.v5+json',
+			'Client-ID': config.clientId,
+			'Authorization': `OAuth ${config.oauth}`
+		},
+		method: 'GET',
+		json: true
+	};
+
+	return request(options)
+	.then(body => {
+		return body.users.map(user => {
+			return [`#${user.name}`, user._id]
+		})
+	}).catch(error => {
+		console.error(error);
+		return [];
+	});
+}
