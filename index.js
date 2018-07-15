@@ -16,7 +16,6 @@ const options = {
     },
     channels: config.channels
 };
-console.log(options);
 
 main();
 async function main() {
@@ -33,7 +32,6 @@ async function main() {
 		if (message.indexOf('!songsuggestion') !== 0 && message.indexOf('!suggestsong') !== 0) {
 			return;
 		}
-		console.log(user)
 		const userDisplayName = user['display-name'];
 		if (user.mod || user.subscriber || await isFollower(user, channel)) {
 			const song = await requestsong(user, message);
@@ -41,7 +39,6 @@ async function main() {
 			if (song) {
 				response = `Song: "${song}" suggested by ${userDisplayName}`;
 			}
-			console.log(channel);
 			client.say(channel, response)
 			.catch(error => {
 				console.error(error);
