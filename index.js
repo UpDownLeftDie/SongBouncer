@@ -4,18 +4,19 @@ const config = require('./config.json');
 
 const options = {
     options: {
-        debug: false
+        debug: true
     },
     connection: {
         reconnect: true
     },
     identity: {
-        username: config.userName,
+        username: config.username,
         password: `oauth:${config.oauth}`
 
     },
     channels: config.channels
 };
+console.log(options);
 
 main();
 async function main() {
@@ -32,10 +33,24 @@ async function main() {
 		if (message.indexOf('!songsuggestion') !== 0 && message.indexOf('!suggestsong') !== 0) {
 			return;
 		}
+		console.log(user)
+		const userDisplayName = user['display-name'];
 		if (user.mod || user.subscriber || await isFollower(user, channel)) {
-			requestsong(user, message);
+			const song = await requestsong(user, message);
+			let response = `@${userDisplayName}, try "!songsuggestion song name"`;
+			if (song) {
+				response = `Song: "${song}" suggested by ${userDisplayName}`;
+			}
+			console.log(channel);
+			client.say(channel, response)
+			.catch(error => {
+				console.error(error);
+			});
 		} else {
-			client.say(channel, `@${user['display-name']}, please Follow to suggest a song`);
+			client.say(channel, `@${userDisplayName}, please Follow to suggest a song`)
+			.catch(error => {
+				console.error(error);
+			});
 		}
 	});
 }
@@ -45,7 +60,9 @@ async function requestsong(user, message) {
 	const song = message.split(' ').splice(1).join(' ');
 	if(song) {
 		console.log(`"${song}" by ${user.username}`);
+		return song;
 	}
+	return false;
 }
 
 function isFollower(user, channel) {
