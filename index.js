@@ -4,7 +4,7 @@ const config = require('./config.json');
 
 const options = {
     options: {
-        debug: true
+        debug: false
     },
     connection: {
         reconnect: true
@@ -29,11 +29,12 @@ async function main() {
 	client.connect();
 
 	client.on("chat", async function (channel, user, message, self) {
+		message = message.toLowerCase();
 		if (message.indexOf('!songsuggestion') !== 0 && message.indexOf('!suggestsong') !== 0) {
 			return;
 		}
 		const userDisplayName = user['display-name'];
-		if (user.mod || user.subscriber || await isFollower(user, channel)) {
+		if (user.mod || user.subscriber || await isFollower(user, channels.get(channel))) {
 			const song = await requestsong(user, message);
 			let response = `@${userDisplayName}, try "!songsuggestion song name"`;
 			if (song) {
@@ -63,7 +64,7 @@ async function requestsong(user, message) {
 }
 
 function isFollower(user, channel) {
-	const uri = `https://api.twitch.tv/kraken/users/${user['user-id']}/follows/channels/${channels.get(channel)}`;
+	const uri = `https://api.twitch.tv/kraken/users/${user['user-id']}/follows/channels/${channel}`;
 	const options = {
 		uri,
 		headers: {
