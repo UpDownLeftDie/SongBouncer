@@ -1,9 +1,13 @@
 {
+	"debug": false,
 	"username": "updownleftdie",
 	"oauth": "sdf24asdjka938xh9f5123123fsddasd",
 	"clientId": "asdasd123w123asdasdadiasd12",
 	"channels": ["#your_twitch_name"],
 	"commandAliases": ["songsuggestion", "suggestsong"],
 	"followersOnly": true,
-	"subscribersOnly": false
+	"subscribersOnly": false,
+	"enableTimedMessage": true,
+	"timedMessageSecs": 300,
+	"timedMessage": "If you want to request a song: Follow the stream first and then use \"!songsuggestion Song by Band\""
 }

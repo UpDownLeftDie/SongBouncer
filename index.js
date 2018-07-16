@@ -4,7 +4,7 @@ const config = require('./config.json');
 
 const options = {
     options: {
-        debug: false
+        debug: config.debug
     },
     connection: {
         reconnect: true
@@ -20,7 +20,7 @@ const options = {
 main();
 async function main() {
 	const channels = new Map(await getChannelIds(config.channels));
-	if (channels.length < 1) {
+	if (channels.size < 1) {
 		console.error('No channels were found. Quitting');
 		return;
 	}
@@ -28,10 +28,19 @@ async function main() {
 	var client = new tmi.client(options);
 	client.connect();
 
+	client.on("connected", () => {
+		if (config.enableTimedMessage) {
+			setInterval(() => {
+				timedMessage(client, channels, config.timedMessage)},
+				config.timedMessageSecs * 1000
+			);
+		}
+	});
+
 	client.on("chat", async function (channel, user, message, self) {
 		let commandFound = 0;
 		config.commandAliases.forEach(alias => {
-			if (message.toLowerCase().indexOf(`!${alias}` === 0)) commandFound = 1;
+			if (message.toLowerCase().indexOf(`!${alias}`) === 0) commandFound = 1;
 		});
 		if (!commandFound) return;
 
@@ -134,5 +143,11 @@ function getChannelIds(channels) {
 	}).catch(error => {
 		console.error(error);
 		return [];
+	});
+}
+
+async function timedMessage(client, channels, message) {
+	channels.forEach((channelId, channel) => {
+		sendChatMessage(client, channel, message);
 	});
 }
