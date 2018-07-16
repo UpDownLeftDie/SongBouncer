@@ -2,5 +2,8 @@
 	"username": "updownleftdie",
 	"oauth": "sdf24asdjka938xh9f5123123fsddasd",
 	"clientId": "asdasd123w123asdasdadiasd12",
-	"channels": ["#updownleftdie"]
+	"channels": ["#your_twitch_name"],
+	"commandAliases": ["songsuggestion", "suggestsong"],
+	"followersOnly": true,
+	"subscribersOnly": false
 }

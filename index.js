@@ -29,32 +29,43 @@ async function main() {
 	client.connect();
 
 	client.on("chat", async function (channel, user, message, self) {
-		message = message.toLowerCase();
-		if (message.indexOf('!songsuggestion') !== 0 && message.indexOf('!suggestsong') !== 0) {
-			return;
-		}
+		let commandFound = 0;
+		config.commandAliases.forEach(alias => {
+			if (message.toLowerCase().indexOf(`!${alias}` === 0)) commandFound = 1;
+		});
+		if (!commandFound) return;
+
 		const userDisplayName = user['display-name'];
-		if (user.mod || user.subscriber || await isFollower(user, channels.get(channel))) {
-			const song = await requestsong(user, message);
-			let response = `@${userDisplayName}, try "!songsuggestion song name"`;
+		if (await allowRequest(user, channels.get(channel))) {
+			const song = requestsong(user, message);
+			let response = `@${userDisplayName}, try "!songsuggestion Song by Band"`;
 			if (song) {
 				response = `Song: "${song}" suggested by ${userDisplayName}`;
 			}
-			client.say(channel, response)
-			.catch(error => {
-				console.error(error);
-			});
+			sendChatMessage(client, channel, response)
 		} else {
-			client.say(channel, `@${userDisplayName}, please Follow to suggest a song`)
-			.catch(error => {
-				console.error(error);
-			});
+			sendChatMessage(client, channel, `@${userDisplayName}, please Follow to suggest a song`)
 		}
 	});
 }
 
+// Checks if a song request should be allowed based on settings
+// EX: if subs only checks for subs, if followers only checks if they're following
+async function allowRequest(user, channel) {
+	if (user.mod || user.subscriber) return true;
+	if (config.subscribersOnly) return false;
+	if (config.followersOnly) {
+		if (await isFollower(user, channel)) {
+			return true;
+		}
+		return false;
+	}
+	return true;
+}
 
-async function requestsong(user, message) {
+
+// Currently, simply logs out successful song requests
+function requestsong(user, message) {
 	const song = message.split(' ').splice(1).join(' ');
 	if(song) {
 		console.log(`"${song}" by ${user.username}`);
@@ -63,6 +74,14 @@ async function requestsong(user, message) {
 	return false;
 }
 
+function sendChatMessage(client, channel, message) {
+	client.say(channel, message)
+	.catch(error => {
+		console.error(error);
+	});
+}
+
+// Checks if a user if following the channel they requested a song in
 function isFollower(user, channel) {
 	const uri = `https://api.twitch.tv/kraken/users/${user['user-id']}/follows/channels/${channel}`;
 	const options = {
@@ -88,6 +107,7 @@ function isFollower(user, channel) {
 	})
 }
 
+// Runs only on startup, convirts channel names to channelIds for API calls
 function getChannelIds(channels) {
 	let loginStr = '';
 	channels.forEach(channel => {
