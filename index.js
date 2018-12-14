@@ -1,6 +1,11 @@
 const TwitchJS = require('twitch-js')
 const request = require('request-promise');
 const config = require('./config.json');
+const SongRequestQueue = require('./classes/song-request-queue');
+const stdin = process.openStdin();
+stdin.setRawMode( true );
+stdin.resume();
+stdin.setEncoding( 'utf8' );
 
 const options = {
     options: {
@@ -16,6 +21,7 @@ const options = {
     },
     channels: config.channels
 };
+const queue = new SongRequestQueue();
 
 main();
 async function main() {
@@ -37,23 +43,60 @@ async function main() {
 		}
 	});
 
+	stdin.on( 'data', function( key ){
+		// ctrl-c ( end of text )
+		if ( key === '\u0003' ) {
+		  process.exit();
+		}
+		if (key === 'n') {
+			const nextSong = queue.nextSong();
+			if (!nextSong) return;
+			console.log(`\nNext song: ${nextSong.song} requested by ${nextSong.requester}\n`);
+		}
+	  });
+
 	client.on("chat", async function (channel, user, message, self) {
+		const userDisplayName = user['display-name'];
+
+		if (message.toLowerCase().indexOf(`!next`) === 0){
+			const nextRequest = queue.peek();
+			if (!nextRequest) return sendChatMessage(client, channel, `@${userDisplayName}, No songs have been requested!`);
+			return sendChatMessage(client, channel, `Next song: "${nextRequest.song}." Requested by @${nextRequest.requester}.`)
+		}
+
+		if (message.toLowerCase().indexOf(`!queue`) === 0){
+			const queueLength = queue.getLength();
+			if (queueLength === 0) {
+				return sendChatMessage(client, channel, `The queue is empty!`);
+			}
+			let count = 5;
+			if (queueLength < 5) count = queueLength;
+			const topSongs = queue.topSongs(count);
+			let i = 0;
+			const nextSongList = topSongs.map(request => {
+				i++;
+				return `${i}. ${request.song}`
+			}).join(', ');
+			
+			return sendChatMessage(client, channel, `There are ${queueLength} requests. The next ${count} songs are: ${nextSongList}`);
+		}
+
 		let commandFound = 0;
 		config.commandAliases.forEach(alias => {
 			if (message.toLowerCase().indexOf(`!${alias}`) === 0) commandFound = 1;
 		});
 		if (!commandFound) return;
 
-		const userDisplayName = user['display-name'];
 		if (await allowRequest(user, channels.get(channel))) {
 			const song = requestsong(user, message);
 			let response = `@${userDisplayName}, try "!songsuggestion Song by Band"`;
 			if (song) {
-				response = `Song: "${song}" suggested by ${userDisplayName}`;
+				queue.enqueue(userDisplayName, song);
+				response = `@${userDisplayName}, "${song}" was added to the queue.`;
 			}
-			sendChatMessage(client, channel, response)
+			sendChatMessage(client, channel, response);
 		} else {
-			sendChatMessage(client, channel, `@${userDisplayName}, please Follow to suggest a song`)
+			sendChatMessage(client, channel, `@${userDisplayName}, please Follow to suggest a song`);
 		}
 	});
 }

@@ -18,6 +18,7 @@
   "homepage": "https://github.com/UpDownLeftDie/SongBouncer#readme",
   "dependencies": {
     "dotenv": "^6.2.0",
+    "lodash": "^4.17.11",
     "request": "^2.88.0",
     "request-promise": "^4.2.2",
     "twitch-js": "^1.2.17"
