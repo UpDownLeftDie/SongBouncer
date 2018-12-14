@@ -1,4 +1,4 @@
-const tmi = require('tmi.js');
+const TwitchJS = require('twitch-js')
 const request = require('request-promise');
 const config = require('./config.json');
 
@@ -25,7 +25,7 @@ async function main() {
 		return;
 	}
 
-	var client = new tmi.client(options);
+	var client = new TwitchJS.client(options);
 	client.connect();
 
 	client.on("connected", () => {
