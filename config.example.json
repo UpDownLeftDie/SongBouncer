@@ -1,8 +1,9 @@
 {
 	"debug": false,
-	"username": "updownleftdie",
+	"botUsername": "updownleftdie",
 	"oauth": "sdf24asdjka938xh9f5123123fsddasd",
 	"clientId": "asdasd123w123asdasdadiasd12",
+	"beatsaverAPI": "",
 	"channels": ["#your_twitch_name"],
 	"commandAliases": ["sr", "songsuggestion", "suggestsong"],
 	"inactiveUserBufferMs": 60000,

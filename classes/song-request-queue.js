@@ -2,8 +2,8 @@ const _ = require('lodash');
 
 class SongRequestQueue {
     constructor() {
-        this.active = [{requester: 'mrteest', song: 'a song'}];
-        this.inactive = [{requester: 'buttsbot', song: 'a song'}];
+        this.active = [];
+        this.inactive = [];
     }
 
     isEmpty() {
@@ -31,8 +31,8 @@ class SongRequestQueue {
     }
 
     swapArrays(fromArray, toArray, requester) {
-        for(let i=0; i < fromArray.length; i++) {
-            if(fromArray[i].requester === requester) {
+        for (let i=0; i < fromArray.length; i++) {
+            if (fromArray[i].requester.toLowerCase() === requester.toLowerCase()) {
                 toArray.push(fromArray[i]);
                 fromArray.splice(i, 1);
                 i--;
@@ -54,9 +54,11 @@ class SongRequestQueue {
         });
 
         const previousUsers = this.active.map(request => request.requester);
-        const leftUsers = previousUsers.filter(user => currentUsers.indexOf(user) < 0);
+        const leftUsers = previousUsers.filter(previousUser => {
+            return currentUsers.indexOf(previousUser.toLowerCase()) < 0;
+        });
         leftUsers.forEach(user => {
-            this.userLeft(user);
+            this.userLeft(user); 
         });
     }
 }

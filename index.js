@@ -23,9 +23,14 @@ const options = {
 };
 const queue = new SongRequestQueue();
 async function getViewers() {
-	const results = await request('https://tmi.twitch.tv/group/user/updownleftdie/chatters');
-	const viewers = JSON.parse(results).chatters.viewers;
-	queue.updateQueues(viewers);
+	const mainChannel = config.channels[0].slice(1);
+	const twitchChattersUrl = `https://tmi.twitch.tv/group/user/${mainChannel}/chatters`;
+	const response = await request(twitchChattersUrl);
+	const results = JSON.parse(response);
+	const chatters = Object.keys(results.chatters).reduce((combined, role) => {
+		return combined.concat(results.chatters[role] || []);
+	}, [])
+	queue.updateQueues(chatters);
 }
 
 main();
@@ -87,15 +92,21 @@ async function main() {
 			return sendChatMessage(client, channel, `There are ${queueLength} requests. The next ${count} songs are: ${nextSongList}`);
 		}
 
-		let commandFound = 0;
+		let commandFound = false;
+		let bsr = false;
 		config.commandAliases.forEach(alias => {
-			if (message.toLowerCase().indexOf(`!${alias}`) === 0) commandFound = 1;
+			if (message.toLowerCase().indexOf(`!${alias}`) === 0) commandFound = true;
 		});
+		if (message.toLowerCase().indexOf(`!bsr`) === 0) {
+			commandFound = true;
+			bsr = true;
+		}
 		if (!commandFound) return;
 
 		if (await allowRequest(user, channels.get(channel))) {
-			const song = requestsong(user, message);
+			const song = await requestSong(user, message, bsr);
 			let response = `@${userDisplayName}, try "!${config.commandAliases[0]} Song by Band"`;
+			if (bsr) response = `@${userDisplayName}, song not found."`;
 			if (song) {
 				queue.enqueue(userDisplayName, song);
 				response = `@${userDisplayName}, "${song}" was added to the queue.`;
@@ -123,13 +134,21 @@ async function allowRequest(user, channel) {
 
 
 // Currently, simply logs out successful song requests
-function requestsong(user, message) {
-	const song = message.split(' ').splice(1).join(' ');
-	if(song) {
-		console.log(`"${song}" by ${user.username}`);
-		return song;
+async function requestSong(user, message, bsr) {
+	let request = message.split(' ').splice(1).join(' ');
+	if (!request) {
+		return false;
 	}
-	return false;
+
+	if (bsr) {
+		try {
+			request = await getSongFromBeatSaver(request);
+		} catch (error) {
+			console.error(error);
+			return false;
+		}
+	}
+	return request;
 }
 
 function sendChatMessage(client, channel, message) {
@@ -199,4 +218,17 @@ async function timedMessage(client, channels, message) {
 	channels.forEach((channelId, channel) => {
 		sendChatMessage(client, channel, message);
 	});
+}
+
+async function getSongFromBeatSaver(id) {
+	const url = `https://beatsaver.com/api/songs/detail/${id}`;
+	const response = await request(url);
+	let song = '';
+	try {
+		song = JSON.parse(response);
+		if (!song || !song.song.name) throw 'Not Found';
+	} catch(error) {
+		throw error;
+	}
+	return song.song.name;
 }
