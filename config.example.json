@@ -4,10 +4,11 @@
 	"oauth": "sdf24asdjka938xh9f5123123fsddasd",
 	"clientId": "asdasd123w123asdasdadiasd12",
 	"channels": ["#your_twitch_name"],
-	"commandAliases": ["songsuggestion", "suggestsong"],
+	"commandAliases": ["sr", "songsuggestion", "suggestsong"],
+	"inactiveUserBufferMs": 60000,
 	"followersOnly": true,
 	"subscribersOnly": false,
 	"enableTimedMessage": true,
 	"timedMessageSecs": 300,
-	"timedMessage": "If you want to request a song: Follow the stream first and then use \"!songsuggestion Song by Band\""
+	"timedMessage": "If you want to request a song: Follow the stream first and then use \"!sr Song by Band\""
 }

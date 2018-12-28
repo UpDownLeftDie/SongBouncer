@@ -1,4 +1,4 @@
-const TwitchJS = require('twitch-js')
+const TwitchJS = require('twitch-js');
 const request = require('request-promise');
 const config = require('./config.json');
 const SongRequestQueue = require('./classes/song-request-queue');
@@ -15,16 +15,22 @@ const options = {
         reconnect: true
     },
     identity: {
-        username: config.username,
+        username: config.botUsername,
         password: `oauth:${config.oauth}`
 
     },
     channels: config.channels
 };
 const queue = new SongRequestQueue();
+async function getViewers() {
+	const results = await request('https://tmi.twitch.tv/group/user/updownleftdie/chatters');
+	const viewers = JSON.parse(results).chatters.viewers;
+	queue.updateQueues(viewers);
+}
 
 main();
 async function main() {
+	setInterval(getViewers, config.inactiveUserBufferMs);
 	const channels = new Map(await getChannelIds(config.channels));
 	if (channels.size < 1) {
 		console.error('No channels were found. Quitting');
@@ -89,7 +95,7 @@ async function main() {
 
 		if (await allowRequest(user, channels.get(channel))) {
 			const song = requestsong(user, message);
-			let response = `@${userDisplayName}, try "!songsuggestion Song by Band"`;
+			let response = `@${userDisplayName}, try "!${config.commandAliases[0]} Song by Band"`;
 			if (song) {
 				queue.enqueue(userDisplayName, song);
 				response = `@${userDisplayName}, "${song}" was added to the queue.`;
