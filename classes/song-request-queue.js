@@ -2,8 +2,10 @@ const _ = require('lodash');
 
 class SongRequestQueue {
     constructor() {
-        this.active = [];
-        this.inactive = [];
+        this.active = [{requester: 'a', song: 'test'},{requester: 'myaubot', song: 'meow'}];
+        this.inactive = [{requester: 'buttsbot', song: 'buttsong'}];
+        this.currentSong = '';
+        this.lastSong = '';
     }
 
     isEmpty() {
@@ -22,28 +24,33 @@ class SongRequestQueue {
         return this.active.slice(0, count);
     }
 
+    formatRequest(request) {
+        console.log(request);
+        if (!request) return 'N/A';
+        return `${request.song}  (${request.requester})`;
+    }
+
     makeRequestList(array) {
         let list = '';
         for (let i = 0; i < array.length; i++) {
-            list += `	${i + 1}. ${array[i].song}  (requested by: ${array[i].requester})\n`
+            list += `	${i + 1}. ${this.formatRequest(array[i])})\n`
         }
         if (!list.length) list = '	N/A\n';
         return list;
     }
 
     printTerminal() {
-        let nextSongStr = 'N/A';
-        if (this.peek()) nextSongStr = `${this.peek().song}  (requested by: ${this.peek().requester})`;
+        let nextSongStr = `${this.formatRequest(this.peek())}`;
         process.stdout.write('\x1Bc');
-        console.log(`
-Inactive Queue:
-${this.makeRequestList(this.inactive)}
-Active Queue:
-${this.makeRequestList(this.active)}
-
-Next Song: ${nextSongStr}
-Press (n) for the next song
-        `);
+        console.log(`Inactive Queue:\n` +
+            `${this.makeRequestList(this.inactive)}` +
+            `\nActive Queue:\n` +
+            `${this.makeRequestList(this.active)}` +
+            `\n\nNext Song: ${nextSongStr}` +
+            `\nLast Song: ${this.formatRequest(this.lastSong)}` +
+            `\n\nCurrent song: ${this.formatRequest(this.currentSong)}` +
+            `\nPress (n) for the next song`
+        );
     }
 
     enqueue(requester, song) {
@@ -53,6 +60,8 @@ Press (n) for the next song
     
     nextSong() {
         const song = this.active.shift();
+        this.lastSong = this.currentSong;
+        this.currentSong = song;
         this.printTerminal();
         return song;
     }
