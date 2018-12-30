@@ -33,6 +33,7 @@ async function getViewers() {
 	queue.updateQueues(chatters);
 }
 
+queue.printTerminal();
 main();
 async function main() {
 	setInterval(getViewers, config.inactiveUserBufferMs);
@@ -62,7 +63,7 @@ async function main() {
 		if (key === 'n') {
 			const nextSong = queue.nextSong();
 			if (!nextSong) return;
-			console.log(`\nNext song: ${nextSong.song} requested by ${nextSong.requester}\n`);
+			// console.log(`\nNext song: ${nextSong.song} requested by ${nextSong.requester}\n`);
 		}
 	  });
 

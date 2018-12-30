@@ -22,12 +22,39 @@ class SongRequestQueue {
         return this.active.slice(0, count);
     }
 
+    makeRequestList(array) {
+        let list = '';
+        for (let i = 0; i < array.length; i++) {
+            list += `	${i + 1}. ${array[i].song}  (requested by: ${array[i].requester})\n`
+        }
+        if (!list.length) list = '	N/A\n';
+        return list;
+    }
+
+    printTerminal() {
+        let nextSongStr = 'N/A';
+        if (this.peek()) nextSongStr = `${this.peek().song}  (requested by: ${this.peek().requester})`;
+        process.stdout.write('\x1Bc');
+        console.log(`
+Inactive Queue:
+${this.makeRequestList(this.inactive)}
+Active Queue:
+${this.makeRequestList(this.active)}
+
+Next Song: ${nextSongStr}
+Press (n) for the next song
+        `);
+    }
+
     enqueue(requester, song) {
         this.active.push({requester, song});
+        this.printTerminal();
     };
     
     nextSong() {
-        return this.active.shift();
+        const song = this.active.shift();
+        this.printTerminal();
+        return song;
     }
 
     swapArrays(fromArray, toArray, requester) {
@@ -60,6 +87,7 @@ class SongRequestQueue {
         leftUsers.forEach(user => {
             this.userLeft(user); 
         });
+        this.printTerminal();
     }
 }
 
