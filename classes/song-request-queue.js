@@ -2,8 +2,8 @@ const _ = require('lodash');
 
 class SongRequestQueue {
     constructor() {
-        this.active = [{requester: 'a', song: 'test'},{requester: 'myaubot', song: 'meow'}];
-        this.inactive = [{requester: 'buttsbot', song: 'buttsong'}];
+        this.active = [];
+        this.inactive = [];
         this.currentSong = '';
         this.lastSong = '';
     }
@@ -25,7 +25,6 @@ class SongRequestQueue {
     }
 
     formatRequest(request) {
-        console.log(request);
         if (!request) return 'N/A';
         return `${request.song}  (${request.requester})`;
     }
