@@ -22,6 +22,7 @@ const options = {
     channels: config.channels
 };
 const queue = new SongRequestQueue();
+const commands = require('./commands')(queue);
 async function getViewers() {
 	const mainChannel = config.channels[0].slice(1);
 	const twitchChattersUrl = `https://tmi.twitch.tv/group/user/${mainChannel}/chatters`;
@@ -71,26 +72,19 @@ async function main() {
 		const userDisplayName = user['display-name'];
 
 		if (message.toLowerCase().indexOf(`!next`) === 0){
-			const nextRequest = queue.peek();
-			if (!nextRequest) return sendChatMessage(client, channel, `@${userDisplayName}, No songs have been requested!`);
-			return sendChatMessage(client, channel, `Next song: "${nextRequest.song}." Requested by @${nextRequest.requester}.`)
+			commands.nextSong(client, channel);
 		}
 
 		if (message.toLowerCase().indexOf(`!queue`) === 0){
-			const queueLength = queue.getLength();
-			if (queueLength === 0) {
-				return sendChatMessage(client, channel, `The queue is empty!`);
-			}
-			let count = 5;
-			if (queueLength < 5) count = queueLength;
-			const topSongs = queue.topSongs(count);
-			let i = 0;
-			const nextSongList = topSongs.map(request => {
-				i++;
-				return `${i}. ${request.song}`
-			}).join(', ');
-			
-			return sendChatMessage(client, channel, `There are ${queueLength} requests. The next ${count} songs are: ${nextSongList}`);
+			commands.queue(client, channel);
+		}
+
+		if (message.toLowerCase().indexOf(`!previous`) === 0){
+			commands.previousSong(client, channel);
+		}
+
+		if (message.toLowerCase().indexOf(`!current`) === 0){
+			commands.currentSong(client, channel);
 		}
 
 		let commandFound = false;
@@ -112,9 +106,9 @@ async function main() {
 				queue.enqueue(userDisplayName, song);
 				response = `@${userDisplayName}, "${song}" was added to the queue.`;
 			}
-			sendChatMessage(client, channel, response);
+			commands.sendChatMessage(client, channel, response);
 		} else {
-			sendChatMessage(client, channel, `@${userDisplayName}, please Follow to suggest a song`);
+			commands.sendChatMessage(client, channel, `@${userDisplayName}, please Follow to suggest a song`);
 		}
 	});
 }
@@ -150,13 +144,6 @@ async function requestSong(user, message, bsr) {
 		}
 	}
 	return request;
-}
-
-function sendChatMessage(client, channel, message) {
-	client.say(channel, message)
-	.catch(error => {
-		console.error(error);
-	});
 }
 
 // Checks if a user if following the channel they requested a song in
@@ -217,7 +204,7 @@ function getChannelIds(channels) {
 
 async function timedMessage(client, channels, message) {
 	channels.forEach((channelId, channel) => {
-		sendChatMessage(client, channel, message);
+		commands.sendChatMessage(client, channel, message);
 	});
 }
 

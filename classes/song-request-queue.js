@@ -4,8 +4,8 @@ class SongRequestQueue {
     constructor() {
         this.active = [];
         this.inactive = [];
-        this.currentSong = '';
-        this.previousSong = '';
+        this.currentSong = {};
+        this.previousSong = {};
     }
 
     isEmpty() {
@@ -19,6 +19,14 @@ class SongRequestQueue {
     peek() {
         return _.get(this, 'active.[0]', undefined);
     };
+
+    previous() {
+        return _.get(this, 'previousSong.song');
+    }
+
+    current() {
+        return _.get(this, 'currentSong.song');
+    }
 
     topSongs(count) {
         return this.active.slice(0, count);
