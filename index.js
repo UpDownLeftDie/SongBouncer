@@ -46,7 +46,7 @@ async function main() {
 	var client = new TwitchJS.client(options);
 	client.connect();
 
-	client.on("connected", () => {
+	client.on('connected', () => {
 		if (config.enableTimedMessage) {
 			setInterval(() => {
 				timedMessage(client, channels, config.timedMessage)},
@@ -67,7 +67,7 @@ async function main() {
 		}
 	  });
 
-	client.on("chat", async function (channel, user, message, self) {
+	client.on('chat', async function (channel, user, message, self) {
 		const userDisplayName = user['display-name'];
 
 		if (message.toLowerCase().indexOf(`!next`) === 0){
@@ -107,7 +107,7 @@ async function main() {
 		if (await allowRequest(user, channels.get(channel))) {
 			const song = await requestSong(user, message, bsr);
 			let response = `@${userDisplayName}, try "!${config.commandAliases[0]} Song by Band"`;
-			if (bsr) response = `@${userDisplayName}, song not found."`;
+			if (bsr) response = `@${userDisplayName}, song not found.`;
 			if (song) {
 				queue.enqueue(userDisplayName, song);
 				response = `@${userDisplayName}, "${song}" was added to the queue.`;

@@ -5,7 +5,7 @@ class SongRequestQueue {
         this.active = [];
         this.inactive = [];
         this.currentSong = '';
-        this.lastSong = '';
+        this.previousSong = '';
     }
 
     isEmpty() {
@@ -45,10 +45,10 @@ class SongRequestQueue {
             `${this.makeRequestList(this.inactive)}` +
             `\nActive Queue:\n` +
             `${this.makeRequestList(this.active)}` +
-            `\n\nNext Song: ${nextSongStr}` +
-            `\nLast Song: ${this.formatRequest(this.lastSong)}` +
-            `\n\nCurrent song: ${this.formatRequest(this.currentSong)}` +
-            `\nPress (n) for the next song`
+            `\n\nPrevious Song: ${this.formatRequest(this.previousSong)}`);
+        console.log('\x1b[31m%s\x1b[0m', `Current song: ${this.formatRequest(this.currentSong)}`);
+        console.log(`Next Song: ${nextSongStr}` +
+            `\n\nPress (n) for the next song`
         );
     }
 
@@ -59,7 +59,7 @@ class SongRequestQueue {
     
     nextSong() {
         const song = this.active.shift();
-        this.lastSong = this.currentSong || this.lastSong;
+        this.previousSong = this.currentSong || this.previousSong;
         this.currentSong = song;
         this.printTerminal();
         return song;
