@@ -59,7 +59,7 @@ class SongRequestQueue {
     
     nextSong() {
         const song = this.active.shift();
-        this.lastSong = this.currentSong;
+        this.lastSong = this.currentSong || this.lastSong;
         this.currentSong = song;
         this.printTerminal();
         return song;
