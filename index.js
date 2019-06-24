@@ -100,7 +100,7 @@ async function main() {
 
 		if (await allowRequest(user, channels.get(channel))) {
 			const song = await requestSong(user, message, bsr);
-			let response = `@${userDisplayName}, try "!${config.commandAliases[0]} Song by Band"`;
+			let response = `@${userDisplayName}, Check: https://beatsaber-songs.herokuapp.com/ first and then try "!${config.commandAliases[0]} Song by Band"`;
 			if (bsr) response = `@${userDisplayName}, song not found.`;
 			if (song) {
 				queue.enqueue(userDisplayName, song);
@@ -139,7 +139,7 @@ async function requestSong(user, message, bsr) {
 		try {
 			request = await getSongFromBeatSaver(request);
 		} catch (error) {
-			console.error(error);
+			console.error('Error getting song from beatsaver');
 			return false;
 		}
 	}
@@ -209,14 +209,14 @@ async function timedMessage(client, channels, message) {
 }
 
 async function getSongFromBeatSaver(id) {
-	const url = `https://beatsaver.com/api/songs/detail/${id}`;
+	const url = `https://beatsaver.com/api/maps/detail/${id}`;
 	const response = await request(url);
 	let song = '';
 	try {
 		song = JSON.parse(response);
-		if (!song || !song.song.name) throw 'Not Found';
+		if (!song || !song.name) throw 'Not Found';
 	} catch(error) {
 		throw error;
 	}
-	return song.song.name;
+	return song.name;
 }
