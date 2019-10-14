@@ -1,4 +1,4 @@
-const TwitchJS = require("twitch-js");
+const TwitchJs = require("twitch-js").default;
 const request = require("request-promise");
 const config = require("./config.json");
 const SongRequestQueue = require("./classes/song-request-queue");
@@ -16,7 +16,7 @@ const options = {
   },
   identity: {
     username: config.botUsername,
-    password: `oauth:${config.oauth}`
+    token: `oauth:${config.oauth}`
   },
   channels: config.channels
 };
@@ -44,15 +44,75 @@ async function main() {
     return;
   }
 
-  var client = new TwitchJS.client(options);
-  client.connect();
+  const logLevel = options.options.debug ? 1 : 0;
+  const { _, chat } = new TwitchJs({
+    token: options.identity.token,
+    username: options.identity.username,
+    log: { level: logLevel }
+  });
 
-  client.on("connected", () => {
+  chat.connect().then(() => {
+    for (const [key] of channels) {
+      chat.join(key);
+    }
+
     if (config.enableTimedMessage) {
       setInterval(() => {
-        timedMessage(client, channels, config.timedMessage);
+        timedMessage(chat, channels, config.timedMessage);
       }, config.timedMessageSecs * 1000);
     }
+
+    chat.on("PRIVMSG", async function(event) {
+      const { tags: user, message, channel } = event;
+      const { displayName } = user;
+
+      if (message.toLowerCase().indexOf(`!next`) === 0) {
+        commands.nextSong(chat, channel);
+      }
+
+      if (message.toLowerCase().indexOf(`!queue`) === 0) {
+        commands.queue(chat, channel);
+      }
+
+      if (message.toLowerCase().indexOf(`!previous`) === 0) {
+        commands.previousSong(chat, channel);
+      }
+
+      if (message.toLowerCase().indexOf(`!current`) === 0) {
+        commands.currentSong(chat, channel);
+      }
+
+      let commandFound = false;
+      let bsr = false;
+      config.commandAliases.forEach(alias => {
+        if (message.toLowerCase().indexOf(`!${alias}`) === 0)
+          commandFound = true;
+      });
+      if (message.toLowerCase().indexOf(`!bsr`) === 0) {
+        commandFound = true;
+        bsr = true;
+      }
+      if (!commandFound) return;
+
+      if (await allowRequest(user, channels.get(channel))) {
+        const song = await requestSong(message, bsr);
+        let response = `@${displayName}, Check: https://beatsaver.com/search first and then try "!${
+          config.commandAliases[0]
+        } Song by Band"`;
+        if (bsr) response = `@${displayName}, song not found.`;
+        if (song) {
+          queue.enqueue(displayName, song);
+          response = `@${displayName}, "${song}" was added to the queue.`;
+        }
+        commands.sendChatMessage(chat, channel, response);
+      } else {
+        commands.sendChatMessage(
+          chat,
+          channel,
+          `@${displayName}, please Follow to suggest a song`
+        );
+      }
+    });
   });
 
   stdin.on("data", function(key) {
@@ -64,56 +124,6 @@ async function main() {
       const nextSong = queue.nextSong();
       if (!nextSong) return;
       // console.log(`\nNext song: ${nextSong.song} requested by ${nextSong.requester}\n`);
-    }
-  });
-
-  client.on("chat", async function(channel, user, message, self) {
-    const userDisplayName = user["display-name"];
-
-    if (message.toLowerCase().indexOf(`!next`) === 0) {
-      commands.nextSong(client, channel);
-    }
-
-    if (message.toLowerCase().indexOf(`!queue`) === 0) {
-      commands.queue(client, channel);
-    }
-
-    if (message.toLowerCase().indexOf(`!previous`) === 0) {
-      commands.previousSong(client, channel);
-    }
-
-    if (message.toLowerCase().indexOf(`!current`) === 0) {
-      commands.currentSong(client, channel);
-    }
-
-    let commandFound = false;
-    let bsr = false;
-    config.commandAliases.forEach(alias => {
-      if (message.toLowerCase().indexOf(`!${alias}`) === 0) commandFound = true;
-    });
-    if (message.toLowerCase().indexOf(`!bsr`) === 0) {
-      commandFound = true;
-      bsr = true;
-    }
-    if (!commandFound) return;
-
-    if (await allowRequest(user, channels.get(channel))) {
-      const song = await requestSong(user, message, bsr);
-      let response = `@${userDisplayName}, Check: https://beatsaver.com/search first and then try "!${
-        config.commandAliases[0]
-      } Song by Band"`;
-      if (bsr) response = `@${userDisplayName}, song not found.`;
-      if (song) {
-        queue.enqueue(userDisplayName, song);
-        response = `@${userDisplayName}, "${song}" was added to the queue.`;
-      }
-      commands.sendChatMessage(client, channel, response);
-    } else {
-      commands.sendChatMessage(
-        client,
-        channel,
-        `@${userDisplayName}, please Follow to suggest a song`
-      );
     }
   });
 }
@@ -133,7 +143,7 @@ async function allowRequest(user, channel) {
 }
 
 // Currently, simply logs out successful song requests
-async function requestSong(user, message, bsr) {
+async function requestSong(message, bsr) {
   let request = message
     .split(" ")
     .splice(1)
@@ -177,12 +187,12 @@ function isFollower(user, channel) {
         return false;
       }
     })
-    .catch(error => {
+    .catch(_ => {
       return false;
     });
 }
 
-// Runs only on startup, convirts channel names to channelIds for API calls
+// Runs only on startup, converts channel names to channelIds for API calls
 function getChannelIds(channels) {
   let loginStr = "";
   channels.forEach(channel => {
@@ -213,9 +223,9 @@ function getChannelIds(channels) {
     });
 }
 
-async function timedMessage(client, channels, message) {
-  channels.forEach((channelId, channel) => {
-    commands.sendChatMessage(client, channel, message);
+async function timedMessage(chat, channels, message) {
+  channels.forEach((_, channel) => {
+    commands.sendChatMessage(chat, channel, message);
   });
 }
 
