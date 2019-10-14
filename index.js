@@ -100,7 +100,7 @@ async function main() {
 
 		if (await allowRequest(user, channels.get(channel))) {
 			const song = await requestSong(user, message, bsr);
-			let response = `@${userDisplayName}, Check: https://beatsaber-songs.herokuapp.com/ first and then try "!${config.commandAliases[0]} Song by Band"`;
+			let response = `@${userDisplayName}, Check: https://beatsaver.com/search first and then try "!${config.commandAliases[0]} Song by Band"`;
 			if (bsr) response = `@${userDisplayName}, song not found.`;
 			if (song) {
 				queue.enqueue(userDisplayName, song);
