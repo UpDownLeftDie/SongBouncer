@@ -7,21 +7,20 @@ module.exports = function(songQueue) {
     sendChatMessage
   };
 
-  function nextSong(client, channel) {
+  function nextSong(chat, channel) {
     const nextRequest = songQueue.peek();
-    if (!nextRequest)
-      return sendChatMessage(client, channel, `Queue is empty!`);
+    if (!nextRequest) return sendChatMessage(chat, channel, `Queue is empty!`);
     return sendChatMessage(
-      client,
+      chat,
       channel,
       `Next song: "${nextRequest.song}." Requested by @${nextRequest.requester}.`
     );
   }
 
-  function queue(client, channel) {
+  function queue(chat, channel) {
     const queueLength = songQueue.getLength();
     if (queueLength === 0) {
-      return sendChatMessage(client, channel, `The queue is empty!`);
+      return sendChatMessage(chat, channel, `The queue is empty!`);
     }
     let count = 5;
     if (queueLength < 5) count = queueLength;
@@ -35,28 +34,28 @@ module.exports = function(songQueue) {
       .join(", ");
 
     return sendChatMessage(
-      client,
+      chat,
       channel,
       `There are ${queueLength} requests. The next ${count} songs are: ${nextSongList}`
     );
   }
 
-  function currentSong(client, channel) {
+  function currentSong(chat, channel) {
     const song = songQueue.current();
     if (song) {
-      sendChatMessage(client, channel, `Current song song is: ${song}`);
+      sendChatMessage(chat, channel, `Current song song is: ${song}`);
     }
   }
 
-  function previousSong(client, channel) {
+  function previousSong(chat, channel) {
     const song = songQueue.previous();
     if (song) {
-      sendChatMessage(client, channel, `Previous song was: ${song}`);
+      sendChatMessage(chat, channel, `Previous song was: ${song}`);
     }
   }
 
-  function sendChatMessage(client, channel, message) {
-    client.say(channel, message).catch(error => {
+  function sendChatMessage(chat, channel, message) {
+    chat.say(channel, message).catch(error => {
       console.error(error);
     });
   }
