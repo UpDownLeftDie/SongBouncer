@@ -22,5 +22,8 @@
     "request": "^2.88.0",
     "request-promise": "^4.2.4",
     "twitch-js": "^2.0.0-beta.30"
+  },
+  "devDependencies": {
+    "eslint": "^6.5.1"
   }
 }
