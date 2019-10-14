@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
@@ -21,6 +21,9 @@
     "lodash": "^4.17.15",
     "request": "^2.88.0",
     "request-promise": "^4.2.4",
-    "twitch-js": "^1.2.17"
+    "twitch-js": "^2.0.0-beta.30"
+  },
+  "devDependencies": {
+    "eslint": "^6.5.1"
   }
 }
