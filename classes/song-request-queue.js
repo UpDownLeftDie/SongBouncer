@@ -40,7 +40,7 @@ class SongRequestQueue {
   makeRequestList(array) {
     let list = "";
     for (let i = 0; i < array.length; i++) {
-      list += `	${i + 1}. ${this.formatRequest(array[i])})\n`;
+      list += `	${i + 1}. ${this.formatRequest(array[i])}\n`;
     }
     if (!list.length) list = "	N/A\n";
     return list;
@@ -54,14 +54,14 @@ class SongRequestQueue {
         `${this.makeRequestList(this.inactive)}` +
         `\nActive Queue:\n` +
         `${this.makeRequestList(this.active)}` +
-        `\n\nPrevious Song: ${this.formatRequest(this.previousSong)}`
+        `\n\nPrevious Song: ${this.formatRequest(this.previousSong)}`,
     );
     console.log(
       "\x1b[31m%s\x1b[0m",
-      `Current song: ${this.formatRequest(this.currentSong)}`
+      `Current song: ${this.formatRequest(this.currentSong)}`,
     );
     console.log(
-      `Next Song: ${nextSongStr}` + `\n\nPress (n) for the next song`
+      `Next Song: ${nextSongStr}` + `\n\nPress (n) for the next song`,
     );
   }
 
@@ -97,15 +97,15 @@ class SongRequestQueue {
   }
 
   updateQueues(currentUsers) {
-    currentUsers.forEach(user => {
+    currentUsers.forEach((user) => {
       this.userReturned(user);
     });
 
-    const previousUsers = this.active.map(request => request.requester);
-    const leftUsers = previousUsers.filter(previousUser => {
+    const previousUsers = this.active.map((request) => request.requester);
+    const leftUsers = previousUsers.filter((previousUser) => {
       return currentUsers.indexOf(previousUser.toLowerCase()) < 0;
     });
-    leftUsers.forEach(user => {
+    leftUsers.forEach((user) => {
       this.userLeft(user);
     });
     this.printTerminal();

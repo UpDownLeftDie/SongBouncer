@@ -3,13 +3,15 @@
 	"botUsername": "updownleftdie",
 	"oauth": "sdf24asdjka938xh9f5123123fsddasd",
 	"clientId": "asdasd123w123asdasdadiasd12",
-	"beatsaverAPI": "",
 	"channels": ["#your_twitch_name"],
-	"commandAliases": ["sr", "songsuggestion", "suggestsong"],
+	"modules": {"beatsaber": true},
 	"inactiveUserBufferMs": 60000,
+	"commandAliases": ["sr", "songsuggestion", "suggestsong"],
 	"followersOnly": true,
 	"subscribersOnly": false,
 	"enableTimedMessage": true,
 	"timedMessageSecs": 300,
-	"timedMessage": "If you want to request a song: Follow the stream first and then use \"!sr Song by Band\""
+	"timedMessage": "If you want to request a song: Follow the stream and then use \"!sr Song by Band\"",
+	"beatSaverHashUrl": "https://beatsaver.com/api/maps/detail",
+	"beatSaverSearchUrl": "https://beatsaver.com/api/search/text/0"
 }

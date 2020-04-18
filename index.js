@@ -9,21 +9,24 @@ stdin.setEncoding("utf8");
 
 const options = {
   options: {
-    debug: config.debug
+    debug: config.debug,
   },
   connection: {
-    reconnect: true
+    reconnect: true,
   },
   identity: {
-    username: config.botUsername,
-    token: `oauth:${config.oauth}`
+    username: config.botUsername.trim(),
+    token: `oauth:${config.oauth.trim().replace(/^oauth:/i, "")}`,
   },
-  channels: config.channels
+  channels: config.channels,
+  modules: config.modules,
+  beatSaverHashUrl: config.beatSaverHashUrl.trim().replace(/\/$/, ""),
+  beatSaverSearchUrl: config.beatSaverSearchUrl.trim().replace(/\/$/, ""),
 };
 const queue = new SongRequestQueue();
 const commands = require("./commands")(queue);
 async function getViewers() {
-  const mainChannel = config.channels[0].slice(1);
+  const mainChannel = config.channels[0].trim().slice(1);
   const twitchChattersUrl = `https://tmi.twitch.tv/group/user/${mainChannel}/chatters`;
   const response = await request(twitchChattersUrl);
   const results = JSON.parse(response);
@@ -48,7 +51,7 @@ async function main() {
   const { _, chat } = new TwitchJs({
     token: options.identity.token,
     username: options.identity.username,
-    log: { level: logLevel }
+    log: { level: logLevel },
   });
 
   chat.connect().then(() => {
@@ -62,7 +65,7 @@ async function main() {
       }, config.timedMessageSecs * 1000);
     }
 
-    chat.on("PRIVMSG", async function(event) {
+    chat.on("PRIVMSG", async function (event) {
       const { tags: user, message, channel } = event;
       const { displayName } = user;
 
@@ -83,39 +86,45 @@ async function main() {
       }
 
       let commandFound = false;
-      let bsr = false;
-      config.commandAliases.forEach(alias => {
+      config.commandAliases.forEach((alias) => {
         if (message.toLowerCase().indexOf(`!${alias}`) === 0)
-          commandFound = true;
+          commandFound = "sr";
       });
-      if (message.toLowerCase().indexOf(`!bsr`) === 0) {
-        commandFound = true;
-        bsr = true;
+      if (
+        options.modules.beatsaber &&
+        message.toLowerCase().indexOf("!bsr") === 0
+      ) {
+        commandFound = "bsr";
       }
       if (!commandFound) return;
 
-      if (await allowRequest(user, channels.get(channel))) {
-        const song = await requestSong(message, bsr);
-        let response = `@${displayName}, Check: https://beatsaver.com/search first and then try "!${
-          config.commandAliases[0]
-        } Song by Band"`;
-        if (bsr) response = `@${displayName}, song not found.`;
+      const reasonDenied = await denyRequest(user, channels.get(channel));
+      if (!reasonDenied) {
+        const [song, err] = await requestSong(
+          message,
+          commandFound,
+          options.modules,
+        );
+        let response = `@${displayName}: Check: https://beatsaver.com/search first and then try "!${config.commandAliases[0]} Song by Band"`;
         if (song) {
           queue.enqueue(displayName, song);
-          response = `@${displayName}, "${song}" was added to the queue.`;
+          response = `@${displayName}: "${song}" was added to the queue.`;
+        }
+        if (err) {
+          response = `@${displayName}: ${err}`;
         }
         commands.sendChatMessage(chat, channel, response);
       } else {
         commands.sendChatMessage(
           chat,
           channel,
-          `@${displayName}, please Follow to suggest a song`
+          `@${displayName}: ${reasonDenied}`,
         );
       }
     });
   });
 
-  stdin.on("data", function(key) {
+  stdin.on("data", function (key) {
     // ctrl-c ( end of text )
     if (key === "\u0003") {
       process.exit();
@@ -130,64 +139,69 @@ async function main() {
 
 // Checks if a song request should be allowed based on settings
 // EX: if subs only checks for subs, if followers only checks if they're following
-async function allowRequest(user, channel) {
-  if (user.mod || user.subscriber) return true;
-  if (config.subscribersOnly) return false;
+async function denyRequest(user, channel) {
+  if (user.mod || user.subscriber) return null;
+  if (config.subscribersOnly) return "only subs/mods can request songs";
   if (config.followersOnly) {
     if (await isFollower(user, channel)) {
-      return true;
+      return null;
     }
-    return false;
+    return "please Follow the channel first and try again";
   }
-  return true;
+  return null;
 }
 
 // Currently, simply logs out successful song requests
-async function requestSong(message, bsr) {
-  let request = message
-    .split(" ")
-    .splice(1)
-    .join(" ");
+async function requestSong(message, command, modules) {
+  let request = message.split(" ").splice(1).join(" ");
   if (!request) {
-    return false;
+    return [null, null];
   }
 
-  if (bsr) {
-    try {
-      request = await getSongFromBeatSaver(request);
-    } catch (error) {
-      console.error("Error getting song from beatsaver");
-      return false;
+  if (modules.beatsaber) {
+    if (command === "bsr") {
+      try {
+        request = await getFromBeatSaverHash(request);
+      } catch (error) {
+        return [null, "no song with id found"];
+      }
+    } else {
+      try {
+        request = await getFromBeatSaverSearch(request);
+      } catch (error) {
+        return [null, "no songs found from search on BeatSaver"];
+      }
     }
+    if (request.stats.downVotes > request.stats.upVotes)
+      return [null, "first search result has negative ratings on BeatSaver"];
+    return [`${request.name}  (mapper: ${request.uploader.username})`, null];
   }
-  return request;
+  return [request, null];
 }
 
 // Checks if a user if following the channel they requested a song in
 function isFollower(user, channel) {
-  const uri = `https://api.twitch.tv/kraken/users/${
-    user["user-id"]
-  }/follows/channels/${channel}`;
+  const uri = `https://api.twitch.tv/kraken/users/${user.userId}/follows/channels/${channel}`;
   const options = {
     uri,
     headers: {
       Accept: "application/vnd.twitchtv.v5+json",
       "Client-ID": config.clientId,
-      Authorization: `OAuth ${config.oauth}`
+      Authorization: `OAuth ${config.oauth}`,
     },
     method: "GET",
-    json: true
+    json: true,
   };
 
   return request(options)
-    .then(body => {
+    .then((body) => {
       if (body.channel) {
         return true;
       } else {
         return false;
       }
     })
-    .catch(_ => {
+    .catch((_) => {
       return false;
     });
 }
@@ -195,7 +209,7 @@ function isFollower(user, channel) {
 // Runs only on startup, converts channel names to channelIds for API calls
 function getChannelIds(channels) {
   let loginStr = "";
-  channels.forEach(channel => {
+  channels.forEach((channel) => {
     loginStr += `,${channel.replace("#", "")}`;
   });
   // TODO use helix endpoint (login&=login&=)
@@ -205,19 +219,19 @@ function getChannelIds(channels) {
     headers: {
       Accept: "application/vnd.twitchtv.v5+json",
       "Client-ID": config.clientId,
-      Authorization: `OAuth ${config.oauth}`
+      Authorization: `OAuth ${config.oauth}`,
     },
     method: "GET",
-    json: true
+    json: true,
   };
 
   return request(options)
-    .then(body => {
-      return body.users.map(user => {
+    .then((body) => {
+      return body.users.map((user) => {
         return [`#${user.name}`, user._id];
       });
     })
-    .catch(error => {
+    .catch((error) => {
       console.error(error);
       return [];
     });
@@ -229,15 +243,40 @@ async function timedMessage(chat, channels, message) {
   });
 }
 
-async function getSongFromBeatSaver(id) {
-  const url = `https://beatsaver.com/api/maps/detail/${id}`;
-  const response = await request(url);
-  let song = "";
+async function getFromBeatSaverHash(id) {
+  const url = `${options.beatSaverHashUrl}/${id}`;
+  const song = await getFromBeatSaver(url);
   try {
-    song = JSON.parse(response);
     if (!song || !song.name) throw "Not Found";
   } catch (error) {
     throw error;
   }
-  return song.name;
+  return song;
+}
+
+async function getFromBeatSaverSearch(search) {
+  const q = encodeURI(search);
+  const url = `${options.beatSaverSearchUrl}?q=${q}`;
+  const response = await getFromBeatSaver(url);
+  let song = null;
+
+  try {
+    if (!response || response.totalDocs < 1) throw "Not Found";
+    song = response.docs[0];
+  } catch (error) {
+    throw error;
+  }
+  return song;
+}
+
+async function getFromBeatSaver(url) {
+  const response = await request(url, {
+    headers: {
+      authority: "beatsaver.com",
+      accept: "application/json",
+      "user-agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.113 Safari/537.36",
+    },
+  });
+  return JSON.parse(response);
 }
