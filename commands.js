@@ -1,10 +1,11 @@
-module.exports = function(songQueue) {
+module.exports = function (songQueue) {
   return {
     nextSong,
     queue,
     currentSong,
     previousSong,
-    sendChatMessage
+    sendChatMessage,
+    removeSong,
   };
 
   function nextSong(chat, channel) {
@@ -13,7 +14,7 @@ module.exports = function(songQueue) {
     return sendChatMessage(
       chat,
       channel,
-      `Next song: "${nextRequest.song}." Requested by @${nextRequest.requester}.`
+      `Next song: "${nextRequest.song}." Requested by @${nextRequest.requester}.`,
     );
   }
 
@@ -27,7 +28,7 @@ module.exports = function(songQueue) {
     const topSongs = songQueue.topSongs(count);
     let i = 0;
     const nextSongList = topSongs
-      .map(request => {
+      .map((request) => {
         i++;
         return `${i}. ${request.song}`;
       })
@@ -36,7 +37,7 @@ module.exports = function(songQueue) {
     return sendChatMessage(
       chat,
       channel,
-      `There are ${queueLength} requests. The next ${count} songs are: ${nextSongList}`
+      `${queueLength} songs in request queue: ${nextSongList}`,
     );
   }
 
@@ -54,8 +55,35 @@ module.exports = function(songQueue) {
     }
   }
 
+  function removeSong(chat, channel, message) {
+    const entryStr = message.split(" ").splice(1).join(" ");
+    let response =
+      '(Mods only) "!remove #" where # is the position in the queue or "!remove last" to remove the last song added';
+    if (!entryStr) {
+      return sendChatMessage(chat, channel, `${response}`);
+    }
+    let index = -1;
+    if (entryStr.toLowerCase() === "last") {
+      index = songQueue.getLength() - 1;
+    } else {
+      index = parseInt(entryStr, 10) - 1;
+    }
+
+    if (songQueue.isEmpty()) {
+      response = "Queue is already empty";
+    } else if (isNaN(index) || index < 0) {
+      response = "Not a valid number";
+    } else if (songQueue.getLength() < index + 1) {
+      response = "Not that many songs in the queue. Check with !queue";
+    } else {
+      const removedSong = songQueue.removeSong(index);
+      response = `${removedSong.song} was removed`;
+    }
+    return sendChatMessage(chat, channel, `${response}`);
+  }
+
   function sendChatMessage(chat, channel, message) {
-    chat.say(channel, message).catch(error => {
+    chat.say(channel, message).catch((error) => {
       console.error(error);
     });
   }

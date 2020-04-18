@@ -71,18 +71,27 @@ async function main() {
 
       if (message.toLowerCase().indexOf(`!next`) === 0) {
         commands.nextSong(chat, channel);
+        return;
       }
 
       if (message.toLowerCase().indexOf(`!queue`) === 0) {
         commands.queue(chat, channel);
+        return;
       }
 
       if (message.toLowerCase().indexOf(`!previous`) === 0) {
         commands.previousSong(chat, channel);
+        return;
       }
 
       if (message.toLowerCase().indexOf(`!current`) === 0) {
         commands.currentSong(chat, channel);
+        return;
+      }
+
+      if (message.toLowerCase().indexOf(`!remove`) === 0 && user.mod) {
+        commands.removeSong(chat, channel, message);
+        return;
       }
 
       let commandFound = false;

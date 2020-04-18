@@ -32,6 +32,16 @@ class SongRequestQueue {
     return this.active.slice(0, count);
   }
 
+  removeSong(index) {
+    const removedSong = this.active[index];
+    this.active = [].concat(
+      this.active.slice(0, index),
+      this.active.slice(index + 1),
+    );
+    this.printTerminal();
+    return removedSong;
+  }
+
   formatRequest(request) {
     if (!request) return "N/A";
     return `${request.song}  (${request.requester})`;
