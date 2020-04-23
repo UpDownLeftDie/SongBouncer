@@ -1,6 +1,6 @@
 const TwitchJs = require("twitch-js").default;
 const request = require("request-promise");
-const config = require("./config.json");
+const config = require("../config.json");
 const SongRequestQueue = require("./classes/song-request-queue");
 const stdin = process.openStdin();
 stdin.setRawMode(true);

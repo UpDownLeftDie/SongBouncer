@@ -4,7 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "set NODE_ENV=production && node index.js"
+    "build": "tsc",
+    "start": "nodemon --no-stdin",
+    "inspect": "nodemon --inspect src/app.ts",
+    "test": "jest",
+    "lint": "npm run lint:js ",
+    "lint:eslint": "eslint --ignore-path .gitignore --ext .ts",
+    "lint:js": "npm run lint:eslint src/",
+    "lint:fix": "npm run lint:js -- --fix"
   },
   "repository": {
     "type": "git",
@@ -21,9 +28,14 @@
     "lodash": "^4.17.15",
     "request": "^2.88.2",
     "request-promise": "^4.2.5",
-    "twitch-js": "^2.0.0-beta.30"
+    "twitch-js": "^2.0.0-beta.30",
+    "winston": "^3.2.1"
   },
   "devDependencies": {
-    "eslint": "^6.8.0"
+    "@types/node": "^13.13.2",
+    "eslint": "^6.8.0",
+    "nodemon": "^2.0.3",
+    "ts-node": "^8.9.0",
+    "typescript": "^3.8.3"
   }
 }
