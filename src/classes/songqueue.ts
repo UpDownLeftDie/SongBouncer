@@ -1,38 +1,44 @@
 const _ = require("lodash");
+import { ISongRequest, ISongQueue } from "../interfaces/ISong";
 
-class SongRequestQueue {
+class SongQueue {
+  active: ISongQueue;
+  inactive: ISongQueue;
+  currentSong: ISongRequest;
+  previousSong: ISongRequest;
+
   constructor() {
     this.active = [];
     this.inactive = [];
-    this.currentSong = null;
-    this.previousSong = null;
+    this.currentSong = undefined;
+    this.previousSong = undefined;
   }
 
-  isEmpty() {
+  isEmpty(): boolean {
     return this.active.length === 0;
   }
 
-  getLength() {
+  getLength(): number {
     return this.active.length;
   }
 
-  peek() {
-    return _.get(this, "active.[0]", undefined);
+  peek(): ISongRequest | undefined {
+    return this?.active?.[0];
   }
 
-  previous() {
-    return _.get(this, "previousSong.song");
+  previous(): string {
+    return this?.previousSong?.song;
   }
 
-  current() {
-    return _.get(this, "currentSong.song");
+  current(): string {
+    return this?.currentSong?.song;
   }
 
-  topSongs(count) {
+  topSongs(count: number): ISongQueue {
     return this.active.slice(0, count);
   }
 
-  removeSong(index) {
+  removeSong(index: number): ISongRequest {
     const removedSong = this.active[index];
     this.active = [].concat(
       this.active.slice(0, index),
@@ -75,20 +81,24 @@ class SongRequestQueue {
     );
   }
 
-  enqueue(requester, song) {
+  enqueue(requester: string, song: string): void {
     this.active.push({ requester, song });
     this.printTerminal();
   }
 
-  nextSong() {
-    const song = this.active.shift();
+  nextSong(): ISongRequest {
+    const song: ISongRequest = this.active.shift();
     this.previousSong = this.currentSong || this.previousSong;
     this.currentSong = song;
     this.printTerminal();
     return song;
   }
 
-  swapArrays(fromArray, toArray, requester) {
+  swapArrays(
+    fromArray: ISongQueue,
+    toArray: ISongQueue,
+    requester: string,
+  ): void {
     for (let i = 0; i < fromArray.length; i++) {
       if (fromArray[i].requester.toLowerCase() === requester.toLowerCase()) {
         toArray.push(fromArray[i]);
@@ -98,15 +108,15 @@ class SongRequestQueue {
     }
   }
 
-  userLeft(user) {
+  userLeft(user: string): void {
     this.swapArrays(this.active, this.inactive, user);
   }
 
-  userReturned(user) {
+  userReturned(user: string): void {
     this.swapArrays(this.inactive, this.active, user);
   }
 
-  updateQueues(currentUsers) {
+  updateQueues(currentUsers: string[]): void {
     currentUsers.forEach((user) => {
       this.userReturned(user);
     });
@@ -122,4 +132,4 @@ class SongRequestQueue {
   }
 }
 
-module.exports = SongRequestQueue;
+export default new SongQueue();
