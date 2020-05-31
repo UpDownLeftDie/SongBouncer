@@ -264,7 +264,7 @@ async function getFromBeatSaverHash(id) {
 }
 
 async function getFromBeatSaverSearch(search) {
-  const q = encodeURI(search);
+  const q = encodeURIComponent(search);
   const url = `${options.beatSaverSearchUrl}?q=${q}`;
   const response = await getFromBeatSaver(url);
   let song = null;
