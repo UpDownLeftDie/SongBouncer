@@ -89,7 +89,7 @@ async function main() {
         return;
       }
 
-      if (message.toLowerCase().indexOf(`!remove`) === 0 && user.mod) {
+      if (message.toLowerCase().indexOf(`!remove`) === 0 && user.mod === "1") {
         commands.removeSong(chat, channel, message);
         return;
       }
@@ -149,7 +149,7 @@ async function main() {
 // Checks if a song request should be allowed based on settings
 // EX: if subs only checks for subs, if followers only checks if they're following
 async function denyRequest(user, channel) {
-  if (user.mod || user.subscriber) return null;
+  if (user.mod === "1" || user.subscriber === "1") return null;
   if (config.subscribersOnly) return "only subs/mods can request songs";
   if (config.followersOnly) {
     if (await isFollower(user, channel)) {
