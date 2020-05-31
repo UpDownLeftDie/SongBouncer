@@ -2,34 +2,38 @@ import TwitchJs, { Message, Api, ApiVersions } from "twitch-js";
 import request from "request-promise";
 import config from "./config";
 import queue from "./classes/songqueue";
+import { ICommand, ICommands } from "./interfaces/ICommand";
 import {
   getChannelIds,
   timedMessage,
   isFollower,
   sendChatMessage,
 } from "./utils";
+import IOutputMessage from "./interfaces/IOutputMessage";
 const stdin = process.openStdin();
 stdin.setRawMode(true);
 stdin.resume();
 stdin.setEncoding("utf8");
 
-const commands = require("./commands")(config.modules);
-console.log(commands);
-async function getViewers() {
-  const mainChannel = config.channels[0].trim().slice(1);
-  const twitchChattersUrl = `https://tmi.twitch.tv/group/user/${mainChannel}/chatters`;
-  const response = await request(twitchChattersUrl);
-  const results = JSON.parse(response);
-  const chatters = Object.keys(results.chatters).reduce((combined, role) => {
-    return combined.concat(results.chatters[role] || []);
-  }, []);
-  queue.updateQueues(chatters);
-}
+const commands: ICommands = require("./commands")(config.modules);
 
-// queue.printTerminal();
+queue.printTerminal();
 main();
 
 async function main() {
+  // Setup Keyboard commands
+  // TODO Move these into keyboard.ts
+  stdin.on("data", function (key) {
+    // ctrl-c ( end of text )
+    if (key === "\u0003") {
+      process.exit();
+    } else if (key === "n") {
+      const nextSong = queue.nextSong();
+      if (!nextSong) return;
+      // console.log(`\nNext song: ${nextSong.song} requested by ${nextSong.requester}\n`);
+    }
+  });
+
   const logLevel = config.options.debug ? "debug" : "error";
   const { api, chat } = new TwitchJs({
     token: config.identity.token,
@@ -37,7 +41,9 @@ async function main() {
     log: { level: logLevel },
   });
 
-  const channels = new Map(await getChannelIds(api, config.channels));
+  const channels: Map<string, string> = new Map(
+    await getChannelIds(api, config.channels),
+  );
   if (channels.size < 1) {
     console.error("No channels were found. Quitting");
     return;
@@ -51,12 +57,7 @@ async function main() {
 
     if (config.enableTimedMessage) {
       setInterval(() => {
-        const outputMessage = {
-          chat,
-          channels,
-          message: config.timedMessage,
-        };
-        timedMessage(channels, outputMessage);
+        timedMessage(chat, channels);
       }, config.timedMessageSecs * 1000);
     }
 
@@ -64,7 +65,6 @@ async function main() {
     chat.on("PRIVMSG", async function (event) {
       const { tags: user, message, channel } = event;
       const { displayName } = user;
-      const outputMessage = { chat, channel, message: "" };
 
       // let commandFound = "";
       // config.commandAliases.forEach((alias) => {
@@ -72,46 +72,31 @@ async function main() {
       //     commandFound = "sr";
       // });
 
-      let command = null;
+      let command: ICommand | null = null;
       {
         const words = message.trim().toLowerCase().split(" ");
-        console.log(words);
         if (words[0][0] !== "!") return;
         command = commands.get(words[0].slice(1));
       }
       if (!command) return;
 
-      const reasonDenied = await denyRequest(user, channels.get(channel));
-      if (!reasonDenied) {
-        const [song, err] = await requestSong(message);
-        if (song) {
-          queue.enqueue(message, song);
-          outputMessage.message = `@${displayName}: "${song}" was added to the queue.`;
-        }
-        if (err) {
-          outputMessage.message = `@${displayName}: ${err}`;
-        }
-        sendChatMessage(outputMessage);
-      } else {
-        sendChatMessage({
+      const channelId = channels.get(channel);
+      const reasonDenied = await denyRequest(user, channelId);
+      if (reasonDenied) {
+        return sendChatMessage({
           chat,
-          channel,
+          channelId,
           message: `@${displayName}: ${reasonDenied}`,
         });
       }
-    });
-  });
 
-  stdin.on("data", function (key) {
-    // ctrl-c ( end of text )
-    if (key === "\u0003") {
-      process.exit();
-    }
-    if (key === "n") {
-      const nextSong = queue.nextSong();
-      if (!nextSong) return;
-      // console.log(`\nNext song: ${nextSong.song} requested by ${nextSong.requester}\n`);
-    }
+      const outputMessage: IOutputMessage = {
+        chat,
+        channelId,
+        message: "Whoopies, something went wrong!",
+      };
+      return command.execute(outputMessage);
+    });
   });
 }
 
@@ -127,14 +112,4 @@ async function denyRequest(user, channel) {
     return "please Follow the channel first and try again";
   }
   return null;
-}
-
-// Currently, simply logs out successful song requests
-async function requestSong(message) {
-  let request = message.split(" ").splice(1).join(" ");
-  if (!request) {
-    return [null, null];
-  }
-
-  return [request, null];
 }

@@ -1,7 +1,8 @@
 import request from "request-promise";
-import { Api } from "twitch-js";
+import { Api, Chat } from "twitch-js";
 import config from "./config";
-import OutputMessage from "./interfaces/OutputMessage";
+import IOutputMessage from "./interfaces/IOutputMessage";
+import queue from "./classes/songqueue";
 
 // Runs only on startup, converts channel names to channelIds for API calls
 export function getChannelIds(
@@ -49,6 +50,8 @@ export function getChannelIds(
 
 // Checks if a user if following the channel they requested a song in
 export function isFollower(user, channel) {
+  // TODO use helix endpoint?
+  // TODO and use api from twitch-js?
   const uri = `https://api.twitch.tv/kraken/users/${user.userId}/follows/channels/${channel}`;
   const options = {
     uri,
@@ -74,15 +77,32 @@ export function isFollower(user, channel) {
     });
 }
 
-export async function timedMessage(channels, outputMessage: OutputMessage) {
-  channels.forEach((_, channel) => {
+export async function timedMessage(chat: Chat, channels: Map<string, string>) {
+  channels.forEach((name, channelId) => {
+    const outputMessage: IOutputMessage = {
+      chat,
+      channelId,
+      message: config.timedMessage,
+    };
     sendChatMessage(outputMessage);
   });
 }
 
-export function sendChatMessage(outputMessage: OutputMessage) {
-  const { chat, channel, message } = outputMessage;
-  chat.say(channel, message).catch((error) => {
+export function sendChatMessage(outputMessage: IOutputMessage) {
+  const { chat, channelId, message } = outputMessage;
+  chat.say(channelId, message).catch((error) => {
     console.error(error);
   });
+}
+
+async function getViewers() {
+  const mainChannel = config.channels[0].trim().slice(1);
+  const twitchChattersUrl = `https://tmi.twitch.tv/group/user/${mainChannel}/chatters`;
+  // TODO probably should wrap this with try catch
+  const response = await request(twitchChattersUrl);
+  const results = JSON.parse(response);
+  const chatters = Object.keys(results.chatters).reduce((combined, role) => {
+    return combined.concat(results.chatters[role] || []);
+  }, []);
+  queue.updateQueues(chatters);
 }
