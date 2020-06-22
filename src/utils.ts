@@ -95,7 +95,7 @@ export function sendChatMessage(outputMessage: IOutputMessage) {
   });
 }
 
-async function getViewers() {
+export async function getViewers() {
   const mainChannel = config.channels[0].trim().slice(1);
   const twitchChattersUrl = `https://tmi.twitch.tv/group/user/${mainChannel}/chatters`;
   // TODO probably should wrap this with try catch

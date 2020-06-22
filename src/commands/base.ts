@@ -2,15 +2,16 @@ import { ISongQueue } from "../interfaces/ISong";
 import songQueue from "../classes/songqueue";
 import { sendChatMessage } from "../utils";
 import IOutputMessage from "../interfaces/IOutputMessage";
+import config from "../config";
 
 export default [
   {
-    name: "sr", // TODO update this with config
+    name: config.commandAliases,
     description: "Adds a song to the queue",
-    execute(outputMessage: IOutputMessage) {
-      const [song, err] = await requestSong(message);
+    async execute(outputMessage: IOutputMessage) {
+      const [song, err] = await requestSong(outputMessage);
       if (song) {
-        queue.enqueue(message, song);
+        songQueue.enqueue(outputMessage, song);
         outputMessage.message = `@${displayName}: "${song}" was added to the queue.`;
       }
       if (err) {
@@ -29,7 +30,7 @@ export default [
   {
     name: "next",
     description: "Says the next song",
-    execute(outputMessage: IOutputMessage) {
+    async execute(outputMessage: IOutputMessage) {
       const nextRequest = songQueue.peek();
       outputMessage.message = `Next song: "${nextRequest.song}." Requested by @${nextRequest.requester}.`;
       if (!nextRequest) outputMessage.message = "Queue is empty!";
@@ -39,7 +40,7 @@ export default [
   {
     name: "queue",
     description: "Says up to the next 5 songs in chat",
-    execute(outputMessage: IOutputMessage) {
+    async execute(outputMessage: IOutputMessage) {
       const queueLength = songQueue.getLength();
       if (queueLength === 0) {
         outputMessage.message = `The queue is empty!`;
@@ -58,7 +59,7 @@ export default [
   {
     name: "current",
     description: "Says the current song",
-    execute(outputMessage: IOutputMessage) {
+    async execute(outputMessage: IOutputMessage) {
       const song = songQueue.current();
       if (song) {
         outputMessage.message = `Current song song is: ${song}`;
@@ -69,7 +70,7 @@ export default [
   {
     name: "previous",
     description: "Says the previous song",
-    execute(outputMessage: IOutputMessage) {
+    async execute(outputMessage: IOutputMessage) {
       const song = songQueue.previous();
       if (song) {
         outputMessage.message = `Previous song was: ${song}`;
@@ -80,7 +81,7 @@ export default [
   {
     name: "remove",
     description: "(Mods only) Removes a song from the queue",
-    execute(outputMessage: IOutputMessage, input: string) {
+    async execute(outputMessage: IOutputMessage, input: string) {
       const inputStr = input.split(" ").splice(1).join(" ");
       outputMessage.message =
         '(Mods only) "!remove #" where # is the position in the queue or "!remove last" to remove the last song added';

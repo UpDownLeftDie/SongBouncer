@@ -17,7 +17,13 @@ module.exports = (modules) => {
 
   let commandMap = new Map();
   commands.forEach((command) => {
-    commandMap.set(command.name, command);
+    if (Array.isArray(command.name)) {
+      command.name.forEach((name) => {
+        commandMap.set(name, command);
+      });
+    } else {
+      commandMap.set(command.name, command);
+    }
   });
   return commandMap;
 };

@@ -1,13 +1,13 @@
 import TwitchJs, { Message, Api, ApiVersions } from "twitch-js";
-import request from "request-promise";
 import config from "./config";
 import queue from "./classes/songqueue";
-import { ICommand, ICommands } from "./interfaces/ICommand";
+import { ICommand, ICommands, IPermissions } from "./interfaces/ICommand";
 import {
   getChannelIds,
   timedMessage,
   isFollower,
   sendChatMessage,
+  getViewers,
 } from "./utils";
 import IOutputMessage from "./interfaces/IOutputMessage";
 const stdin = process.openStdin();
@@ -61,16 +61,10 @@ async function main() {
       }, config.timedMessageSecs * 1000);
     }
 
-    // TODO update PRIVMSG to class
+    // TODO update PRIVMSG to class?
     chat.on("PRIVMSG", async function (event) {
       const { tags: user, message, channel } = event;
       const { displayName } = user;
-
-      // let commandFound = "";
-      // config.commandAliases.forEach((alias) => {
-      //   if (message.toLowerCase().indexOf(`!${alias}`) === 0)
-      //     commandFound = "sr";
-      // });
 
       let command: ICommand | null = null;
       {
@@ -81,7 +75,11 @@ async function main() {
       if (!command) return;
 
       const channelId = channels.get(channel);
-      const reasonDenied = await denyRequest(user, channelId);
+      const reasonDenied = await denyRequest(
+        user,
+        channelId,
+        command.permissions,
+      );
       if (reasonDenied) {
         return sendChatMessage({
           chat,
@@ -95,20 +93,27 @@ async function main() {
         channelId,
         message: "Whoopies, something went wrong!",
       };
-      return command.execute(outputMessage);
+      return await command.execute(outputMessage);
     });
   });
 }
 
 // Checks if a song request should be allowed based on settings
 // EX: if subs only checks for subs, if followers only checks if they're following
-async function denyRequest(user, channel) {
-  if (user.mod || user.subscriber) return null;
-  if (config.subscribersOnly) return "only subs/mods can request songs";
-  if (config.followersOnly) {
-    if (await isFollower(user, channel)) {
-      return null;
-    }
+async function denyRequest(user, channel, permissions: IPermissions) {
+  if (user.broadcaster == "1") return null;
+  if (permissions.broadcaster) {
+    return "only the broadcaster can use this command";
+  }
+  if (user.mod == "1") return null;
+  if (permissions.mod) {
+    return "only mods can use this command";
+  }
+  if (user.subscriber == "1") return null;
+  if (permissions.subscriber) {
+    return "only subs can use this command";
+  }
+  if (permissions.follower && !(await isFollower(user, channel))) {
     return "please Follow the channel first and try again";
   }
   return null;
