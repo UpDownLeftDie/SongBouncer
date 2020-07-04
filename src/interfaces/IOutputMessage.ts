@@ -1,7 +1,8 @@
-import { Chat } from "twitch-js";
+import { Client, ChatUserstate } from "tmi.js";
 
 export default interface IOutputMessage {
-  chat: Chat;
+  userstate?: ChatUserstate;
+  client: Client;
   channelId: string;
   message: string;
 }

@@ -1,7 +1,7 @@
 import { ISongQueue } from "../interfaces/ISong";
+import IOutputMessage from "../interfaces/IOutputMessage";
 import songQueue from "../classes/songqueue";
 import { sendChatMessage } from "../utils";
-import IOutputMessage from "../interfaces/IOutputMessage";
 import config from "../config";
 
 export default [
@@ -9,21 +9,17 @@ export default [
     name: config.commandAliases,
     description: "Adds a song to the queue",
     async execute(outputMessage: IOutputMessage) {
+      const displayName = outputMessage.userstate["display-name"];
       const [song, err] = await requestSong(outputMessage);
       if (song) {
-        songQueue.enqueue(outputMessage, song);
+        songQueue.enqueue(displayName, song);
         outputMessage.message = `@${displayName}: "${song}" was added to the queue.`;
       }
       if (err) {
         outputMessage.message = `@${displayName}: ${err}`;
       }
 
-      // let request = message.split(" ").splice(1).join(" ");
-      // if (!request) {
-      //   return [null, null];
-      // }
-
-      // return [request, null];
+      songQueue.enqueue(displayName, song);
       return sendChatMessage(outputMessage);
     },
   },

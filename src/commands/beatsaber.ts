@@ -3,22 +3,7 @@ import config from "../config";
 
 export default [
   {
-    name: "bsr",
-    description: "Looks up a song by hashid",
-    async execute() {
-      let song = undefined;
-      try {
-        song = await getFromBeatSaverHash(request);
-      } catch (error) {
-        return [null, "no song with id found"];
-      }
-      if (song.stats.downVotes > song.stats.upVotes)
-        return [null, "first search result has negative ratings on BeatSaver"];
-      return [`${song.name}  (mapper: ${song.uploader.username})`, null];
-    },
-  },
-  {
-    name: "sr", // TODO update this with config aliases
+    name: config.commandAliases,
     description: "Uses loose search to find a song",
     async execute() {
       message = `@${displayName}: Check: https://beatsaver.com/search first and then try "!${config.commandAliases[0]} Song by Band"`;
@@ -27,6 +12,21 @@ export default [
         song = await getFromBeatSaverSearch(request);
       } catch (error) {
         return [null, "no songs found from search on BeatSaver"];
+      }
+      if (song.stats.downVotes > song.stats.upVotes)
+        return [null, "first search result has negative ratings on BeatSaver"];
+      return [`${song.name}  (mapper: ${song.uploader.username})`, null];
+    },
+  },
+  {
+    name: "bsr",
+    description: "Looks up a song by hashid",
+    async execute() {
+      let song = undefined;
+      try {
+        song = await getFromBeatSaverHash(request);
+      } catch (error) {
+        return [null, "no song with id found"];
       }
       if (song.stats.downVotes > song.stats.upVotes)
         return [null, "first search result has negative ratings on BeatSaver"];

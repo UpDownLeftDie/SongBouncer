@@ -1,14 +1,11 @@
 import request from "request-promise";
-import { Api, Chat } from "twitch-js";
+import { Client } from "tmi.js";
 import config from "./config";
 import IOutputMessage from "./interfaces/IOutputMessage";
 import queue from "./classes/songqueue";
 
 // Runs only on startup, converts channel names to channelIds for API calls
-export function getChannelIds(
-  api: Api,
-  channels: string[],
-): Promise<[[string, string]]> {
+export function getChannelIds(channels: string[]): Promise<[[string, string]]> {
   let loginStr = "";
   channels.forEach((channel) => {
     loginStr += `,${channel.replace("#", "")}`;
@@ -77,10 +74,13 @@ export function isFollower(user, channel) {
     });
 }
 
-export async function timedMessage(chat: Chat, channels: Map<string, string>) {
+export async function timedMessage(
+  client: Client,
+  channels: Map<string, string>,
+) {
   channels.forEach((name, channelId) => {
     const outputMessage: IOutputMessage = {
-      chat,
+      client,
       channelId,
       message: config.timedMessage,
     };
@@ -89,8 +89,8 @@ export async function timedMessage(chat: Chat, channels: Map<string, string>) {
 }
 
 export function sendChatMessage(outputMessage: IOutputMessage) {
-  const { chat, channelId, message } = outputMessage;
-  chat.say(channelId, message).catch((error) => {
+  const { client, channelId, message } = outputMessage;
+  client.say(channelId, message).catch((error) => {
     console.error(error);
   });
 }

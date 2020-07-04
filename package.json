@@ -28,14 +28,15 @@
     "lodash": "^4.17.15",
     "request": "^2.88.2",
     "request-promise": "^4.2.5",
-    "twitch-js": "^2.0.0-beta.33",
-    "winston": "^3.3.0"
+    "tmi.js": "^1.5.0",
+    "winston": "^3.3.3"
   },
   "devDependencies": {
-    "@types/node": "^14.0.13",
-    "eslint": "^7.3.0",
+    "@types/node": "^14.0.14",
+    "@types/tmi.js": "^1.4.0",
+    "eslint": "^7.4.0",
     "nodemon": "^2.0.4",
     "ts-node": "^8.10.2",
-    "typescript": "^3.9.5"
+    "typescript": "^3.9.6"
   }
 }

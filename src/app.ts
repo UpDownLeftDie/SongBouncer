@@ -1,4 +1,4 @@
-import TwitchJs, { Message, Api, ApiVersions } from "twitch-js";
+import tmi, { Client, ChatUserstate } from "tmi.js";
 import config from "./config";
 import queue from "./classes/songqueue";
 import { ICommand, ICommands, IPermissions } from "./interfaces/ICommand";
@@ -34,15 +34,23 @@ async function main() {
     }
   });
 
-  const logLevel = config.options.debug ? "debug" : "error";
-  const { api, chat } = new TwitchJs({
-    token: config.identity.token,
-    username: config.identity.username,
-    log: { level: logLevel },
+  const client: Client = tmi.Client({
+    options: { debug: config.options.debug },
+    connection: {
+      reconnect: true,
+      secure: true,
+    },
+    identity: {
+      username: config.identity.username,
+      password: config.identity.token,
+    },
+    channels: Array.isArray(config.channels)
+      ? config.channels
+      : [config.channels],
   });
 
   const channels: Map<string, string> = new Map(
-    await getChannelIds(api, config.channels),
+    await getChannelIds(config.channels),
   );
   if (channels.size < 1) {
     console.error("No channels were found. Quitting");
@@ -50,66 +58,75 @@ async function main() {
   }
   setInterval(getViewers, config.inactiveUserBufferSecs * 1000);
 
-  chat.connect().then(() => {
-    for (const [key] of channels) {
-      chat.join(key);
-    }
-
+  client.connect().then(() => {
     if (config.enableTimedMessage) {
       setInterval(() => {
-        timedMessage(chat, channels);
+        timedMessage(client, channels);
       }, config.timedMessageSecs * 1000);
     }
 
-    // TODO update PRIVMSG to class?
-    chat.on("PRIVMSG", async function (event) {
-      const { tags: user, message, channel } = event;
-      const { displayName } = user;
+    client.on(
+      "message",
+      async (
+        channel,
+        userstate: ChatUserstate,
+        message,
+        self,
+      ): Promise<void> => {
+        if (self) return;
+        const displayName = userstate["display-name"];
 
-      let command: ICommand | null = null;
-      {
-        const words = message.trim().toLowerCase().split(" ");
-        if (words[0][0] !== "!") return;
-        command = commands.get(words[0].slice(1));
-      }
-      if (!command) return;
+        let command: ICommand | null = null;
+        {
+          const words = message.trim().toLowerCase().split(" ");
+          if (words[0][0] !== "!") return;
+          command = commands.get(words[0].slice(1));
+        }
+        if (!command) return;
 
-      const channelId = channels.get(channel);
-      const reasonDenied = await denyRequest(
-        user,
-        channelId,
-        command.permissions,
-      );
-      if (reasonDenied) {
-        return sendChatMessage({
-          chat,
+        const channelId = channels.get(channel);
+        const reasonDenied = await denyRequest(
+          userstate,
           channelId,
-          message: `@${displayName}: ${reasonDenied}`,
-        });
-      }
+          command.permissions,
+        );
+        if (reasonDenied) {
+          return sendChatMessage({
+            userstate,
+            client,
+            channelId,
+            message: `@${displayName}: ${reasonDenied}`,
+          });
+        }
 
-      const outputMessage: IOutputMessage = {
-        chat,
-        channelId,
-        message: "Whoopies, something went wrong!",
-      };
-      return await command.execute(outputMessage);
-    });
+        const outputMessage: IOutputMessage = {
+          userstate,
+          client,
+          channelId,
+          message: "Whoops, something went wrong!",
+        };
+        return await command.execute(outputMessage);
+      },
+    );
   });
 }
 
 // Checks if a song request should be allowed based on settings
 // EX: if subs only checks for subs, if followers only checks if they're following
-async function denyRequest(user, channel, permissions: IPermissions) {
+async function denyRequest(
+  user: tmi.Userstate,
+  channel: string,
+  permissions: IPermissions,
+) {
   if (user.broadcaster == "1") return null;
   if (permissions.broadcaster) {
     return "only the broadcaster can use this command";
   }
-  if (user.mod == "1") return null;
+  if (user.mod) return null;
   if (permissions.mod) {
     return "only mods can use this command";
   }
-  if (user.subscriber == "1") return null;
+  if (user.subscriber) return null;
   if (permissions.subscriber) {
     return "only subs can use this command";
   }
