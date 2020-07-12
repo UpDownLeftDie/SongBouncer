@@ -9,8 +9,8 @@ import {
   sendChatMessage,
   getViewers,
 } from "./utils";
-import IOutputMessage from "./interfaces/IOutputMessage";
-const stdin = process.openStdin();
+import { IInputMessage } from "./interfaces/IMessages";
+const stdin: any = process.openStdin();
 stdin.setRawMode(true);
 stdin.resume();
 stdin.setEncoding("utf8");
@@ -77,10 +77,14 @@ async function main() {
         const displayName = userstate["display-name"];
 
         let command: ICommand | null = null;
+        let commandInput: string | null = null;
+        let matchedKeyword: string = "";
         {
           const words = message.trim().toLowerCase().split(" ");
           if (words[0][0] !== "!") return;
-          command = commands.get(words[0].slice(1));
+          matchedKeyword = words[0].slice(1);
+          command = commands.get(matchedKeyword);
+          commandInput = words.splice(1).join(" ");
         }
         if (!command) return;
 
@@ -88,24 +92,24 @@ async function main() {
         const reasonDenied = await denyRequest(
           userstate,
           channelId,
-          command.permissions,
+          command.permissions || {},
         );
         if (reasonDenied) {
           return sendChatMessage({
             userstate,
             client,
-            channelId,
+            channel,
             message: `@${displayName}: ${reasonDenied}`,
           });
         }
 
-        const outputMessage: IOutputMessage = {
+        const inputMessage: IInputMessage = {
           userstate,
           client,
-          channelId,
-          message: "Whoops, something went wrong!",
+          channel,
+          message: commandInput,
         };
-        return await command.execute(outputMessage);
+        await command.execute(inputMessage, matchedKeyword);
       },
     );
   });

@@ -1,45 +1,56 @@
-import { ISongQueue } from "../interfaces/ISong";
-import IOutputMessage from "../interfaces/IOutputMessage";
+import { IOutputMessage, IInputMessage } from "../interfaces/IMessages";
 import songQueue from "../classes/songqueue";
-import { sendChatMessage } from "../utils";
 import config from "../config";
+import { sendChatMessage, ordinalSuffix } from "../utils";
 
 export default [
   {
     name: config.commandAliases,
     description: "Adds a song to the queue",
-    async execute(outputMessage: IOutputMessage) {
-      const displayName = outputMessage.userstate["display-name"];
-      const [song, err] = await requestSong(outputMessage);
-      if (song) {
-        songQueue.enqueue(displayName, song);
-        outputMessage.message = `@${displayName}: "${song}" was added to the queue.`;
-      }
-      if (err) {
-        outputMessage.message = `@${displayName}: ${err}`;
-      }
+    permission: {
+      follower: config.followersOnly,
+      subscriber: config.subscribersOnly,
+    },
+    async execute(inputMessage: IInputMessage): Promise<void> {
+      const displayName = inputMessage.userstate["display-name"];
+      const song = inputMessage.message;
+      const outputMessage: IOutputMessage = {
+        ...inputMessage,
+        message: null,
+      };
 
       songQueue.enqueue(displayName, song);
-      return sendChatMessage(outputMessage);
+      outputMessage.message = `@${displayName}: "${song}" was added to the queue.`;
+      sendChatMessage(outputMessage);
     },
   },
   {
     name: "next",
     description: "Says the next song",
-    async execute(outputMessage: IOutputMessage) {
+    permission: {},
+    async execute(inputMessage: IInputMessage) {
+      const outputMessage: IOutputMessage = {
+        ...inputMessage,
+        message: "Song request queue is empty",
+      };
       const nextRequest = songQueue.peek();
-      outputMessage.message = `Next song: "${nextRequest.song}." Requested by @${nextRequest.requester}.`;
-      if (!nextRequest) outputMessage.message = "Queue is empty!";
+      if (nextRequest) {
+        outputMessage.message = `Next song: "${nextRequest.song}." Requested by ${nextRequest.requester}.`;
+      }
       return sendChatMessage(outputMessage);
     },
   },
   {
     name: "queue",
     description: "Says up to the next 5 songs in chat",
-    async execute(outputMessage: IOutputMessage) {
+    permission: {},
+    async execute(inputMessage: IInputMessage) {
+      const outputMessage = {
+        ...inputMessage,
+        message: "The queue is empty",
+      };
       const queueLength = songQueue.getLength();
       if (queueLength === 0) {
-        outputMessage.message = `The queue is empty!`;
         return sendChatMessage(outputMessage);
       }
       const count = Math.min(5, queueLength);
@@ -48,47 +59,62 @@ export default [
         .map((request, i) => `${i + 1}. ${request.song}`)
         .join(", ");
 
-      outputMessage.message = `${queueLength} songs in request queue: ${nextSongList}`;
+      outputMessage.message = `${queueLength} total songs. Next ${count}: ${nextSongList}`;
       return sendChatMessage(outputMessage);
     },
   },
   {
     name: "current",
     description: "Says the current song",
-    async execute(outputMessage: IOutputMessage) {
+    permission: {},
+    async execute(inputMessage: IInputMessage) {
+      const outputMessage = {
+        ...inputMessage,
+        message: "No song has been selected yet",
+      };
       const song = songQueue.current();
       if (song) {
         outputMessage.message = `Current song song is: ${song}`;
-        sendChatMessage(outputMessage);
       }
+      return sendChatMessage(outputMessage);
     },
   },
   {
     name: "previous",
     description: "Says the previous song",
-    async execute(outputMessage: IOutputMessage) {
+    permission: {},
+    async execute(inputMessage: IInputMessage) {
+      const outputMessage = {
+        ...inputMessage,
+        message: "No songs have been played yet",
+      };
       const song = songQueue.previous();
       if (song) {
         outputMessage.message = `Previous song was: ${song}`;
-        sendChatMessage(outputMessage);
       }
+      return sendChatMessage(outputMessage);
     },
   },
   {
-    name: "remove",
+    name: ["remove", "removesilent"],
     description: "(Mods only) Removes a song from the queue",
-    async execute(outputMessage: IOutputMessage, input: string) {
-      const inputStr = input.split(" ").splice(1).join(" ");
-      outputMessage.message =
-        '(Mods only) "!remove #" where # is the position in the queue or "!remove last" to remove the last song added';
-      if (!inputStr) {
+    permission: { mod: true },
+    async execute(inputMessage: IInputMessage, matchedKeyword: string) {
+      const input = inputMessage.message;
+      const outputMessage: IOutputMessage = {
+        ...inputMessage,
+        message:
+          '(Mods only) "!remove #" where # is the position in the queue or "!remove last" to remove the last song added',
+      };
+      if (!input) {
         return sendChatMessage(outputMessage);
       }
+
       let index = -1;
-      if (inputStr.toLowerCase() === "last") {
+      if (input.toLowerCase() === "last") {
         index = songQueue.getLength() - 1;
       } else {
-        index = parseInt(inputStr, 10) - 1;
+        index = parseInt(input, 10) - 1;
       }
 
       if (songQueue.isEmpty()) {
@@ -100,9 +126,28 @@ export default [
           "Not that many songs in the queue. Check with !queue";
       } else {
         const removedSong = songQueue.removeSong(index);
-        outputMessage.message = `${removedSong.song} was removed`;
+
+        if (matchedKeyword === "removesilent") {
+          const songPosition = ordinalSuffix(index + 1);
+          outputMessage.message = `The ${songPosition} song in the queue was removed`;
+        } else {
+          outputMessage.message = `${removedSong.song} was removed`;
+        }
       }
       return sendChatMessage(outputMessage);
     },
   },
+  // {
+  //   name: ["undo", "wrongsong"],
+  //   description: "Users can remove their own song if the request comes back incorrectly",
+  //   async execute(inputMessage: IInputMessage, matchedKeyword: string) {
+  //     const input = inputMessage.message;
+  //     const outputMessage: IOutputMessage = {
+  //       ...inputMessage,
+  //       message:
+  //         '(Mods only) "!remove #" where # is the position in the queue or "!remove last" to remove the last song added',
+  //     };
+  //     return sendChatMessage(outputMessage);
+  //   },
+  // },
 ];

@@ -1,4 +1,3 @@
-const _ = require("lodash");
 import { ISongRequest, ISongQueue } from "../interfaces/ISong";
 
 class SongQueue {
@@ -48,11 +47,12 @@ class SongQueue {
     return removedSong;
   }
 
-  formatRequest(request) {
+  formatRequest(request: { song: string; requester: string }): string {
     if (!request) return "N/A";
     return `${request.song}  (${request.requester})`;
   }
 
+  // TODO use console.table instead
   makeRequestList(array) {
     let list = "";
     for (let i = 0; i < array.length; i++) {
@@ -62,7 +62,7 @@ class SongQueue {
     return list;
   }
 
-  printTerminal() {
+  printTerminal(): void {
     let nextSongStr = `${this.formatRequest(this.peek())}`;
     process.stdout.write("\x1Bc");
     console.log(
@@ -81,9 +81,13 @@ class SongQueue {
     );
   }
 
-  enqueue(requester: string, song: string): void {
+  // TODO enqueue(queueObject): void
+  //    dynamic/generic object that doesnt require a type so various items can be added to the list
+  //    ex: best saber maps have Uploader and Key values: {requester, songname, uploader, key}
+  enqueue(requester: string, song: string): number {
     this.active.push({ requester, song });
     this.printTerminal();
+    return this.getLength();
   }
 
   nextSong(): ISongRequest {

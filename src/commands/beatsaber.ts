@@ -1,42 +1,58 @@
-import request from "request-promise";
+import { IInputMessage, IOutputMessage } from "../interfaces/IMessages";
+import { sendChatMessage } from "../utils";
+import { IBSSong } from "../interfaces/BeatSaber";
+import fetch from "node-fetch";
+import songQueue from "../classes/songqueue";
 import config from "../config";
 
 export default [
   {
-    name: config.commandAliases,
-    description: "Uses loose search to find a song",
-    async execute() {
-      message = `@${displayName}: Check: https://beatsaver.com/search first and then try "!${config.commandAliases[0]} Song by Band"`;
+    name: [...config.commandAliases, "bsr"],
+    description: "Searches BeatSaver.com or directly if hash ID is used",
+    async execute(inputMessage: IInputMessage, matchedKeyword: string) {
+      const displayName = inputMessage.userstate["display-name"];
+      const request = inputMessage.message;
+      const isBsrID: boolean =
+        matchedKeyword === "bsr" ||
+        (request && request.length < 5 && request.indexOf(" ") === -1);
+      const outputMessage: IOutputMessage = {
+        ...inputMessage,
+        message: `@${displayName}: Check: https://beatsaver.com/search first and then try "!${config.commandAliases[0]} Song by Band"`,
+      };
+      if (isBsrID) {
+        outputMessage.message = `@${displayName}: Check: https://beatsaver.com/search "!bsr (hash from url)"`;
+      }
+
+      if (!request) {
+        return sendChatMessage(outputMessage);
+      }
+
       let song = undefined;
       try {
-        song = await getFromBeatSaverSearch(request);
+        if (isBsrID) {
+          song = await getFromBeatSaverHash(request);
+        } else {
+          song = await getFromBeatSaverSearch(request);
+        }
       } catch (error) {
         return [null, "no songs found from search on BeatSaver"];
       }
-      if (song.stats.downVotes > song.stats.upVotes)
-        return [null, "first search result has negative ratings on BeatSaver"];
-      return [`${song.name}  (mapper: ${song.uploader.username})`, null];
-    },
-  },
-  {
-    name: "bsr",
-    description: "Looks up a song by hashid",
-    async execute() {
-      let song = undefined;
-      try {
-        song = await getFromBeatSaverHash(request);
-      } catch (error) {
-        return [null, "no song with id found"];
+      if (song.stats.downVotes > song.stats.upVotes) {
+        outputMessage.message =
+          "first search result has negative ratings on BeatSaver";
+        return sendChatMessage(outputMessage);
       }
-      if (song.stats.downVotes > song.stats.upVotes)
-        return [null, "first search result has negative ratings on BeatSaver"];
-      return [`${song.name}  (mapper: ${song.uploader.username})`, null];
+
+      const songStr = `${song.name}  (mapper: ${song.uploader.username})`;
+      songQueue.enqueue(displayName, songStr);
+      outputMessage.message = `@${displayName}: ${songStr} was added to the queue`;
+      return sendChatMessage(outputMessage);
     },
   },
 ];
 
-async function getFromBeatSaver(url) {
-  const response = await request(url, {
+async function getFromBeatSaver(url: string) {
+  const res = await fetch(url, {
     headers: {
       authority: "beatsaver.com",
       accept: "application/json",
@@ -44,10 +60,10 @@ async function getFromBeatSaver(url) {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.113 Safari/537.36",
     },
   });
-  return JSON.parse(response);
+  return await res.json();
 }
 
-async function getFromBeatSaverHash(id) {
+async function getFromBeatSaverHash(id: string): Promise<IBSSong> {
   const url = `${config.beatSaverHashUrl}/${id}`;
   const song = await getFromBeatSaver(url);
   try {
@@ -58,7 +74,7 @@ async function getFromBeatSaverHash(id) {
   return song;
 }
 
-async function getFromBeatSaverSearch(search) {
+async function getFromBeatSaverSearch(search: string): Promise<IBSSong> {
   const q = encodeURIComponent(search);
   const url = `${config.beatSaverSearchUrl}?q=${q}`;
   const response = await getFromBeatSaver(url);
