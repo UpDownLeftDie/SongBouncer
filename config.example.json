@@ -12,6 +12,6 @@
 	"enableTimedMessage": true,
 	"timedMessageSecs": 300,
 	"timedMessage": "If you want to request a song: Follow the stream and then use \"!sr Song by Band\"",
-	"beatSaverHashUrl": "https://beatsaver.com/api/maps/detail",
+	"beatSaverKeyUrl": "https://beatsaver.com/api/maps/detail",
 	"beatSaverSearchUrl": "https://beatsaver.com/api/search/text/0"
 }

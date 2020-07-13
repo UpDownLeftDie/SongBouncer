@@ -4,7 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "set NODE_ENV=production && node index.js"
+    "build": "tsc",
+    "start": "nodemon --no-stdin",
+    "watch": "nodemon --no-stdin --watch",
+    "inspect": "nodemon --inspect src/app.ts",
+    "test": "jest",
+    "lint": "npm run lint:js ",
+    "lint:eslint": "eslint --ignore-path .gitignore --ext .ts",
+    "lint:js": "npm run lint:eslint src/",
+    "lint:fix": "npm run lint:js -- --fix"
   },
   "repository": {
     "type": "git",
@@ -18,12 +26,20 @@
   "homepage": "https://github.com/UpDownLeftDie/SongBouncer#readme",
   "dependencies": {
     "dotenv": "^8.2.0",
-    "lodash": "^4.17.15",
-    "request": "^2.88.2",
-    "request-promise": "^4.2.5",
-    "twitch-js": "^2.0.0-beta.30"
+    "node-fetch": "^2.6.0",
+    "tmi.js": "^1.5.0",
+    "winston": "^3.3.3"
   },
   "devDependencies": {
-    "eslint": "^7.1.0"
+    "@types/jest": "^26.0.4",
+    "@types/node": "^14.0.22",
+    "@types/node-fetch": "^2.5.7",
+    "@types/tmi.js": "^1.4.0",
+    "eslint": "^7.4.0",
+    "jest": "^26.1.0",
+    "nodemon": "^2.0.4",
+    "ts-jest": "^26.1.1",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.6"
   }
 }
