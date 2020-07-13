@@ -13,16 +13,25 @@ Benefits of being a separate and standalone app makes it agnostic to what game/p
 ## Features
 
 - Supports "plaintext" request
-- Supports Beat Saver requests `!sr <hash>`
-  - `!sr` will also search Beat Saver
-- Inactive and Active queue lists that auto detect peoples status
+- Supports Beat Saver requests `!sr <key or search>`
+  - `!bsr` is an alias
+- Active and Inactive queues that auto-detect viewers status
+  - Viewers wont miss their song if they step away!
 - Followers only mode
-- Subscribers only Mode
+- Subscribers only mode
+- Mod only commands
 - Times message in chat
+- Modular
 
 ## TODO
 
-- Save queue to file on quit
-- Request History
-- Song Blacklist
-- User Blacklist
+- Custom song list requests
+- TwitchSings requests
+- JustDance requests
+- RockBand requests
+- Save queue to file on quit/crash
+- Request History/Stats
+- Song Blocklist
+- User Blocklist
+- Dynamically change modes based on game set on Twitch
+- [Electron](https://www.electronjs.org/) + ReactJS UI

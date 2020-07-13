@@ -11,7 +11,7 @@ export default [
   {
     name: config.commandAliases,
     description: "Adds a song to the queue",
-    permission: {
+    permissions: {
       follower: config.followersOnly,
       subscriber: config.subscribersOnly,
     },
@@ -30,7 +30,7 @@ export default [
   {
     name: "next",
     description: "Says the next song",
-    permission: {},
+    permissions: {},
     async execute(inputMessage: IInputMessage) {
       const outputMessage: IOutputMessage = {
         ...inputMessage,
@@ -46,7 +46,7 @@ export default [
   {
     name: "queue",
     description: "Says up to the next 5 songs in chat",
-    permission: {},
+    permissions: {},
     async execute(inputMessage: IInputMessage) {
       const maxPrint = 5;
       const outputMessage = {
@@ -72,7 +72,7 @@ export default [
   {
     name: "current",
     description: "Says the current song",
-    permission: {},
+    permissions: {},
     async execute(inputMessage: IInputMessage) {
       const outputMessage = {
         ...inputMessage,
@@ -88,7 +88,7 @@ export default [
   {
     name: "previous",
     description: "Says the previous song",
-    permission: {},
+    permissions: {},
     async execute(inputMessage: IInputMessage) {
       const outputMessage = {
         ...inputMessage,
@@ -104,7 +104,7 @@ export default [
   {
     name: ["remove", "removesilent"],
     description: "(Mods only) Removes a song from the queue",
-    permission: { mod: true },
+    permissions: { mod: true },
     async execute(inputMessage: IInputMessage, matchedKeyword: string) {
       const input = inputMessage.message;
       const outputMessage: IOutputMessage = {

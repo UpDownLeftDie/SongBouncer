@@ -9,19 +9,23 @@ export default [
   {
     name: [...config.commandAliases, "bsr"],
     description:
-      "Searches BeatSaver.com or gets songs directly if hash ID is used",
+      "Searches BeatSaver.com or gets songs directly if key ID is used",
+    permissions: {
+      follower: config.followersOnly,
+      subscriber: config.subscribersOnly,
+    },
     async execute(inputMessage: IInputMessage, matchedKeyword: string) {
       const displayName = inputMessage.userstate["display-name"];
       const request = inputMessage.message;
       const isBsrID: boolean =
         matchedKeyword === "bsr" ||
-        (request && request.length < 5 && request.indexOf(" ") === -1); // hashids range from 1 to 4 characters without spaces
+        (request && request.length < 5 && request.indexOf(" ") === -1); // key range from 1 to 4 characters without spaces
       const outputMessage: IOutputMessage = {
         ...inputMessage,
         message: `Check: https://beatsaver.com/search first and then try "!${config.commandAliases[0]} Song by Band"`,
       };
       if (isBsrID) {
-        outputMessage.message = `Check: https://beatsaver.com/search "!bsr (hash from url)"`;
+        outputMessage.message = `Check: https://beatsaver.com/search "!bsr (key from url)"`;
       }
 
       if (!request) {
@@ -31,7 +35,7 @@ export default [
       let song = undefined;
       try {
         if (isBsrID) {
-          song = await getFromBeatSaverHash(request);
+          song = await getFromBeatSaverKey(request);
         } else {
           song = await getFromBeatSaverSearch(request);
         }
@@ -39,7 +43,6 @@ export default [
         outputMessage.message = "no songs found from search on BeatSaver";
         return sendChatMessage(outputMessage, true);
       }
-      console.log(song);
       if (song.stats.downVotes > song.stats.upVotes) {
         outputMessage.message =
           "first search result has negative ratings on BeatSaver";
@@ -71,8 +74,8 @@ async function getFromBeatSaver(url: string) {
   return await res.json();
 }
 
-async function getFromBeatSaverHash(id: string): Promise<IBSSong> {
-  const url = `${config.beatSaverHashUrl}/${id}`;
+async function getFromBeatSaverKey(id: string): Promise<IBSSong> {
+  const url = `${config.beatSaverKeyUrl}/${id}`;
   const song = await getFromBeatSaver(url);
   try {
     if (!song || !song.name) throw "Not Found";

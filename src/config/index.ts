@@ -43,8 +43,8 @@ export default {
   timedMessageSecs: config?.timedMessageSecs || 900,
   inactiveUserBufferSecs: config?.inactiveUserBufferSecs || 60,
   timedMessage: config?.timedMessage,
-  beatSaverHashUrl:
-    config?.beatSaverHashUrl.trim().replace(/\/$/, "") ||
+  beatSaverKeyUrl:
+    config?.beatSaverKeyUrl.trim().replace(/\/$/, "") ||
     "https://beatsaver.com/api/maps/detail",
   beatSaverSearchUrl:
     config?.beatSaverSearchUrl.trim().replace(/\/$/, "") ||

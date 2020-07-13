@@ -125,16 +125,16 @@ async function denyRequest(
   channel: string,
   permissions: IPermissions,
 ) {
-  if (user.broadcaster == "1") return null;
+  if (user.badges.broadcaster) return null;
   if (permissions.broadcaster) {
     return "only the broadcaster can use this command";
   }
-  if (user.mod) return null;
   if (permissions.mod) {
+    if (user.mod) return null;
     return "only mods can use this command";
   }
-  if (user.subscriber) return null;
   if (permissions.subscriber) {
+    if (user.subscriber) return null;
     return "only subs can use this command";
   }
   if (permissions.follower && !(await isFollower(user, channel))) {

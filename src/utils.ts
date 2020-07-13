@@ -52,7 +52,7 @@ export async function isFollower(
   channel: string,
 ): Promise<boolean> {
   // TODO use helix endpoint?
-  const url = `https://api.twitch.tv/kraken/users/${user.userId}/follows/channels/${channel}`;
+  const url = `https://api.twitch.tv/kraken/users/${user["user-id"]}/follows/channels/${channel}`;
   const options = {
     headers: {
       Accept: "application/vnd.twitchtv.v5+json",
