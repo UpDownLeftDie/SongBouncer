@@ -3,6 +3,7 @@ import { IOutputMessage } from "./interfaces/IMessages";
 import fetch from "node-fetch";
 import config from "./config";
 import queue from "./classes/songqueue";
+import { ISongRequest } from "./interfaces/ISong";
 
 // Runs only on startup, converts channel names to channelIds for API calls
 export async function getChannelIds(
@@ -89,7 +90,6 @@ export async function timedMessage(
   });
 }
 
-// TODO make sendAddSongSuccessMessage
 export function sendChatMessage(
   outputMessage: IOutputMessage,
   reply: boolean = false,
@@ -101,6 +101,16 @@ export function sendChatMessage(
   client.say(channel, message).catch((error) => {
     console.error(error);
   });
+}
+
+export function addSongSuccessMessage(
+  outputMessage: IOutputMessage,
+  songName: string,
+  position: number,
+  reply: boolean = true,
+): void {
+  outputMessage.message = `${songName} was added to the queue at #${position}`;
+  sendChatMessage(outputMessage, reply);
 }
 
 export async function getViewers(): Promise<void> {

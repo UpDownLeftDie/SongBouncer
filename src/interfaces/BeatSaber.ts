@@ -7,4 +7,5 @@ export interface IBSSong {
     downVotes: number;
     upVotes: number;
   };
+  key: string;
 }

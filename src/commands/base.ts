@@ -1,7 +1,11 @@
 import { IOutputMessage, IInputMessage } from "../interfaces/IMessages";
 import songQueue from "../classes/songqueue";
 import config from "../config";
-import { sendChatMessage, ordinalSuffix } from "../utils";
+import {
+  sendChatMessage,
+  addSongSuccessMessage,
+  ordinalSuffix,
+} from "../utils";
 
 export default [
   {
@@ -19,9 +23,8 @@ export default [
         message: null,
       };
 
-      songQueue.enqueue(displayName, song);
-      outputMessage.message = `"${song}" was added to the queue.`;
-      sendChatMessage(outputMessage, true);
+      const position = songQueue.enqueue({ song, requester: displayName });
+      addSongSuccessMessage(outputMessage, song, position, true);
     },
   },
   {
@@ -45,6 +48,7 @@ export default [
     description: "Says up to the next 5 songs in chat",
     permission: {},
     async execute(inputMessage: IInputMessage) {
+      const maxPrint = 5;
       const outputMessage = {
         ...inputMessage,
         message: "The queue is empty",
@@ -53,13 +57,15 @@ export default [
       if (queueLength === 0) {
         return sendChatMessage(outputMessage, false);
       }
-      const count = Math.min(5, queueLength);
+      const count = Math.min(maxPrint, queueLength);
       const topSongs = songQueue.topSongs(count);
       const nextSongList = topSongs
         .map((request, i) => `${i + 1}. ${request.song}`)
         .join(", ");
 
-      outputMessage.message = `${queueLength} total songs. Next ${count}: ${nextSongList}`;
+      let nextStr = "";
+      if (queueLength > maxPrint) nextStr = ` Next ${count}:`;
+      outputMessage.message = `${queueLength} songs in queue.${nextStr} ${nextSongList}`;
       return sendChatMessage(outputMessage, false);
     },
   },

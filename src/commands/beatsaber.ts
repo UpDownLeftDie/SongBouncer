@@ -1,5 +1,5 @@
 import { IInputMessage, IOutputMessage } from "../interfaces/IMessages";
-import { sendChatMessage } from "../utils";
+import { sendChatMessage, addSongSuccessMessage } from "../utils";
 import { IBSSong } from "../interfaces/BeatSaber";
 import fetch from "node-fetch";
 import songQueue from "../classes/songqueue";
@@ -39,16 +39,22 @@ export default [
         outputMessage.message = "no songs found from search on BeatSaver";
         return sendChatMessage(outputMessage, true);
       }
+      console.log(song);
       if (song.stats.downVotes > song.stats.upVotes) {
         outputMessage.message =
           "first search result has negative ratings on BeatSaver";
         return sendChatMessage(outputMessage, true);
       }
 
-      const songStr = `${song.name}  (mapper: ${song.uploader.username})`;
-      songQueue.enqueue(displayName, songStr);
-      outputMessage.message = `${songStr} was added to the queue`;
-      return sendChatMessage(outputMessage, true);
+      const position = songQueue.enqueue({
+        song: song.name,
+        uploader: song.uploader.username,
+        key: song.key,
+        requester: displayName,
+      });
+
+      const songStr = `${song.name}  (uploader: ${song.uploader.username})`;
+      return addSongSuccessMessage(outputMessage, songStr, position, true);
     },
   },
 ];

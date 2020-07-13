@@ -47,45 +47,38 @@ class SongQueue {
     return removedSong;
   }
 
-  formatRequest(request: { song: string; requester: string }): string {
+  formatRequest(request: ISongRequest): string {
     if (!request) return "N/A";
-    return `${request.song}  (${request.requester})`;
+    // TODO handle this better so its not ugly JSON
+    return JSON.stringify(request);
   }
 
-  // TODO use console.table instead
-  makeRequestList(array) {
-    let list = "";
-    for (let i = 0; i < array.length; i++) {
-      list += `	${i + 1}. ${this.formatRequest(array[i])}\n`;
-    }
-    if (!list.length) list = "	N/A\n";
-    return list;
+  printQueue(queue: ISongQueue, name: string): void {
+    console.log(`${name} Queue`);
+    const adjusted = queue.reduce((acc, request, i) => {
+      acc[i + 1] = request;
+      return acc;
+    }, {});
+    console.table(adjusted);
   }
 
   printTerminal(): void {
-    let nextSongStr = `${this.formatRequest(this.peek())}`;
     process.stdout.write("\x1Bc");
-    console.log(
-      `Inactive Queue:\n` +
-        `${this.makeRequestList(this.inactive)}` +
-        `\nActive Queue:\n` +
-        `${this.makeRequestList(this.active)}` +
-        `\n\nPrevious Song: ${this.formatRequest(this.previousSong)}`,
-    );
+    this.printQueue(this.inactive, "Inactive");
+    this.printQueue(this.active, "Active");
+    console.log(`\n\nPrevious Song: ${this.formatRequest(this.previousSong)}`);
     console.log(
       "\x1b[31m%s\x1b[0m",
       `Current song: ${this.formatRequest(this.currentSong)}`,
     );
+    const nextSongStr = `${this.formatRequest(this.peek())}`;
     console.log(
       `Next Song: ${nextSongStr}` + `\n\nPress (n) for the next song`,
     );
   }
 
-  // TODO enqueue(queueObject): void
-  //    dynamic/generic object that doesnt require a type so various items can be added to the list
-  //    ex: best saber maps have Uploader and Key values: {requester, songname, uploader, key}
-  enqueue(requester: string, song: string): number {
-    this.active.push({ requester, song });
+  enqueue(queueObject: ISongRequest): number {
+    this.active.push(queueObject);
     this.printTerminal();
     return this.getLength();
   }
