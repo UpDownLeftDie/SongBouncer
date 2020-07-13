@@ -8,23 +8,24 @@ import config from "../config";
 export default [
   {
     name: [...config.commandAliases, "bsr"],
-    description: "Searches BeatSaver.com or directly if hash ID is used",
+    description:
+      "Searches BeatSaver.com or gets songs directly if hash ID is used",
     async execute(inputMessage: IInputMessage, matchedKeyword: string) {
       const displayName = inputMessage.userstate["display-name"];
       const request = inputMessage.message;
       const isBsrID: boolean =
         matchedKeyword === "bsr" ||
-        (request && request.length < 5 && request.indexOf(" ") === -1);
+        (request && request.length < 5 && request.indexOf(" ") === -1); // hashids range from 1 to 4 characters without spaces
       const outputMessage: IOutputMessage = {
         ...inputMessage,
-        message: `@${displayName}: Check: https://beatsaver.com/search first and then try "!${config.commandAliases[0]} Song by Band"`,
+        message: `Check: https://beatsaver.com/search first and then try "!${config.commandAliases[0]} Song by Band"`,
       };
       if (isBsrID) {
-        outputMessage.message = `@${displayName}: Check: https://beatsaver.com/search "!bsr (hash from url)"`;
+        outputMessage.message = `Check: https://beatsaver.com/search "!bsr (hash from url)"`;
       }
 
       if (!request) {
-        return sendChatMessage(outputMessage);
+        return sendChatMessage(outputMessage, true);
       }
 
       let song = undefined;
@@ -35,18 +36,19 @@ export default [
           song = await getFromBeatSaverSearch(request);
         }
       } catch (error) {
-        return [null, "no songs found from search on BeatSaver"];
+        outputMessage.message = "no songs found from search on BeatSaver";
+        return sendChatMessage(outputMessage, true);
       }
       if (song.stats.downVotes > song.stats.upVotes) {
         outputMessage.message =
           "first search result has negative ratings on BeatSaver";
-        return sendChatMessage(outputMessage);
+        return sendChatMessage(outputMessage, true);
       }
 
       const songStr = `${song.name}  (mapper: ${song.uploader.username})`;
       songQueue.enqueue(displayName, songStr);
-      outputMessage.message = `@${displayName}: ${songStr} was added to the queue`;
-      return sendChatMessage(outputMessage);
+      outputMessage.message = `${songStr} was added to the queue`;
+      return sendChatMessage(outputMessage, true);
     },
   },
 ];

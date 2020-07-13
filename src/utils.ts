@@ -85,13 +85,19 @@ export async function timedMessage(
       channel: name,
       message: config.timedMessage,
     };
-    sendChatMessage(outputMessage);
+    sendChatMessage(outputMessage, false);
   });
 }
 
 // TODO make sendAddSongSuccessMessage
-export function sendChatMessage(outputMessage: IOutputMessage): void {
-  const { client, channel, message } = outputMessage;
+export function sendChatMessage(
+  outputMessage: IOutputMessage,
+  reply: boolean = false,
+): void {
+  const { client, channel, userstate } = outputMessage;
+  let message = outputMessage.message;
+  const displayName = userstate?.["display-name"];
+  if (reply && displayName) message = `@${displayName}: ${message}`;
   client.say(channel, message).catch((error) => {
     console.error(error);
   });

@@ -95,12 +95,15 @@ async function main() {
           command.permissions || {},
         );
         if (reasonDenied) {
-          return sendChatMessage({
-            userstate,
-            client,
-            channel,
-            message: `@${displayName}: ${reasonDenied}`,
-          });
+          return sendChatMessage(
+            {
+              userstate,
+              client,
+              channel,
+              message: reasonDenied,
+            },
+            true,
+          );
         }
 
         const inputMessage: IInputMessage = {

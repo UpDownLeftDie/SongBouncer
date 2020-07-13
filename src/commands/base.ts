@@ -20,8 +20,8 @@ export default [
       };
 
       songQueue.enqueue(displayName, song);
-      outputMessage.message = `@${displayName}: "${song}" was added to the queue.`;
-      sendChatMessage(outputMessage);
+      outputMessage.message = `"${song}" was added to the queue.`;
+      sendChatMessage(outputMessage, true);
     },
   },
   {
@@ -37,7 +37,7 @@ export default [
       if (nextRequest) {
         outputMessage.message = `Next song: "${nextRequest.song}." Requested by ${nextRequest.requester}.`;
       }
-      return sendChatMessage(outputMessage);
+      return sendChatMessage(outputMessage, false);
     },
   },
   {
@@ -51,7 +51,7 @@ export default [
       };
       const queueLength = songQueue.getLength();
       if (queueLength === 0) {
-        return sendChatMessage(outputMessage);
+        return sendChatMessage(outputMessage, false);
       }
       const count = Math.min(5, queueLength);
       const topSongs = songQueue.topSongs(count);
@@ -60,7 +60,7 @@ export default [
         .join(", ");
 
       outputMessage.message = `${queueLength} total songs. Next ${count}: ${nextSongList}`;
-      return sendChatMessage(outputMessage);
+      return sendChatMessage(outputMessage, false);
     },
   },
   {
@@ -76,7 +76,7 @@ export default [
       if (song) {
         outputMessage.message = `Current song song is: ${song}`;
       }
-      return sendChatMessage(outputMessage);
+      return sendChatMessage(outputMessage, false);
     },
   },
   {
@@ -92,7 +92,7 @@ export default [
       if (song) {
         outputMessage.message = `Previous song was: ${song}`;
       }
-      return sendChatMessage(outputMessage);
+      return sendChatMessage(outputMessage, false);
     },
   },
   {
@@ -107,7 +107,7 @@ export default [
           '(Mods only) "!remove #" where # is the position in the queue or "!remove last" to remove the last song added',
       };
       if (!input) {
-        return sendChatMessage(outputMessage);
+        return sendChatMessage(outputMessage, false);
       }
 
       let index = -1;
@@ -134,7 +134,7 @@ export default [
           outputMessage.message = `${removedSong.song} was removed`;
         }
       }
-      return sendChatMessage(outputMessage);
+      return sendChatMessage(outputMessage, false);
     },
   },
   // {
@@ -145,9 +145,9 @@ export default [
   //     const outputMessage: IOutputMessage = {
   //       ...inputMessage,
   //       message:
-  //         '(Mods only) "!remove #" where # is the position in the queue or "!remove last" to remove the last song added',
+  //         'Use !wrongsong if the wrong song was added to the queue',
   //     };
-  //     return sendChatMessage(outputMessage);
+  //     return sendChatMessage(outputMessage, false);
   //   },
   // },
 ];
