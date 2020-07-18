@@ -22,10 +22,10 @@ export default [
         (request && request.length < 5 && request.indexOf(" ") === -1); // key range from 1 to 4 characters without spaces
       const outputMessage: IOutputMessage = {
         ...inputMessage,
-        message: `Check: https://beatsaver.com/search first and then try "!${config.commandAliases[0]} Song by Band"`,
+        message: `Check: https://beatsaver.com/search first and then try "!${config.commandAliases[0]} <Song by Band>"`,
       };
       if (isBsrID) {
-        outputMessage.message = `Check: https://beatsaver.com/search "!bsr (key from url)"`;
+        outputMessage.message = `Check: https://beatsaver.com/search "!bsr <key from url>"`;
       }
 
       if (!request) {

@@ -84,7 +84,7 @@ async function main() {
           if (words[0][0] !== "!") return;
           matchedKeyword = words[0].slice(1);
           command = commands.get(matchedKeyword);
-          commandInput = words.splice(1).join(" ");
+          commandInput = words.splice(1).join(" ").trim();
         }
         if (!command) return;
 
@@ -125,19 +125,19 @@ async function denyRequest(
   channel: string,
   permissions: IPermissions,
 ) {
-  if (user.badges.broadcaster) return null;
-  if (permissions.broadcaster) {
+  if (user?.badges?.broadcaster) return null;
+  if (permissions?.broadcaster) {
     return "only the broadcaster can use this command";
   }
-  if (permissions.mod) {
+  if (permissions?.mod) {
     if (user.mod) return null;
     return "only mods can use this command";
   }
-  if (permissions.subscriber) {
+  if (permissions?.subscriber) {
     if (user.subscriber) return null;
     return "only subs can use this command";
   }
-  if (permissions.follower && !(await isFollower(user, channel))) {
+  if (permissions?.follower && !(await isFollower(user, channel))) {
     return "please Follow the channel first and try again";
   }
   return null;

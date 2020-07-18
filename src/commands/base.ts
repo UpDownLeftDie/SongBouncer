@@ -20,8 +20,12 @@ export default [
       const song = inputMessage.message;
       const outputMessage: IOutputMessage = {
         ...inputMessage,
-        message: null,
+        message: "!sr <song>",
       };
+
+      if (!song) {
+        return sendChatMessage(outputMessage, true);
+      }
 
       const position = songQueue.enqueue({ song, requester: displayName });
       addSongSuccessMessage(outputMessage, song, position, true);
