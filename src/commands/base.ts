@@ -15,12 +15,15 @@ export default [
       follower: config.followersOnly,
       subscriber: config.subscribersOnly,
     },
-    async execute(inputMessage: IInputMessage): Promise<void> {
+    async execute(
+      inputMessage: IInputMessage,
+      matchedKeyword: string,
+    ): Promise<void> {
       const displayName = inputMessage.userstate["display-name"];
       const song = inputMessage.message;
       const outputMessage: IOutputMessage = {
         ...inputMessage,
-        message: "!sr <song>",
+        message: `to request a song type: !${matchedKeyword} <song>`,
       };
 
       if (!song) {
