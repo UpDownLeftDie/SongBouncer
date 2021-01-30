@@ -70,7 +70,7 @@ async function main() {
       async (
         channel,
         userstate: ChatUserstate,
-        message,
+        message: string,
         self,
       ): Promise<void> => {
         if (self) return;

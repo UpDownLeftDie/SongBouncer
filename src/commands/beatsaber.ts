@@ -40,6 +40,7 @@ export default [
           song = await getFromBeatSaverSearch(request);
         }
       } catch (error) {
+        console.log(error);
         outputMessage.message = "no songs found from search on BeatSaver";
         return sendChatMessage(outputMessage, true);
       }
@@ -68,7 +69,7 @@ async function getFromBeatSaver(url: string) {
       authority: "beatsaver.com",
       accept: "application/json",
       "user-agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.113 Safari/537.36",
+        "PostmanRuntime/7.26.8",
     },
   });
   return await res.json();
@@ -90,7 +91,6 @@ async function getFromBeatSaverSearch(search: string): Promise<IBSSong> {
   const url = `${config.beatSaverSearchUrl}?q=${q}`;
   const response = await getFromBeatSaver(url);
   let song = null;
-
   try {
     if (!response || response.totalDocs < 1) throw "Not Found";
     song = response.docs[0];
