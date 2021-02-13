@@ -1,7 +1,6 @@
 import { ICommand } from "../interfaces/ICommand";
 import base from "./base";
 import beatsaber from "./beatsaber";
-import twitchsings from "./twitchsings";
 
 module.exports = (modules) => {
   let commands: Array<any> = base;
@@ -10,8 +9,6 @@ module.exports = (modules) => {
       const name = module.trim().toLowerCase();
       if (name === "beatsaber") {
         commands = commands.concat(beatsaber);
-      } else if (name === "twitchsings") {
-        commands = commands.concat(twitchsings);
       }
     }
   });
