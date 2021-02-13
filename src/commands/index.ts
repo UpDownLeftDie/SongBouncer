@@ -2,11 +2,11 @@ import { ICommand } from "../interfaces/ICommand";
 import base from "./base";
 import beatsaber from "./beatsaber";
 
-module.exports = (modules) => {
+module.exports = (commandModules) => {
   let commands: Array<any> = base;
-  Object.entries(modules).forEach(([module, isEnabled]) => {
+  Object.entries(commandModules).forEach(([commandModule, isEnabled]) => {
     if (isEnabled) {
-      const name = module.trim().toLowerCase();
+      const name = commandModule.trim().toLowerCase();
       if (name === "beatsaber") {
         commands = commands.concat(beatsaber);
       }
